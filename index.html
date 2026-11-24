@@ -2534,6 +2534,13 @@ async function enterApp() {
                 : '<tr><td colspan="5" class="py-6 text-center text-slate-400">Belum ada riwayat transaksi untuk santri ini.</td></tr>';
         }
 
+        // Fungsi pembantu untuk mengurutkan COA berdasarkan nomor akun
+        function getSortedCoa() {
+            return [...(state.coa || [])].sort((a, b) => 
+                String(a.kode).localeCompare(String(b.kode), undefined, { numeric: true, sensitivity: 'base' })
+            );
+        }
+
         function renderLaporanKeuangan() {
             const s = state.settings;
             const periode = document.getElementById('laporanPeriodeFilter')?.value || 'ALL';
@@ -2549,8 +2556,10 @@ async function enterApp() {
                 trxList = trxList.filter(t => String(t.tanggal).slice(5, 7) === periode);
             }
 
-            const masukCoa = (state.coa || []).filter(c => c.jenis === 'MASUK');
-            const keluarCoa = (state.coa || []).filter(c => c.jenis === 'KELUAR');
+            // Gunakan getSortedCoa() agar tampilan laporan juga terurut
+            const sortedCoa = getSortedCoa();
+            const masukCoa = sortedCoa.filter(c => c.jenis === 'MASUK');
+            const keluarCoa = sortedCoa.filter(c => c.jenis === 'KELUAR');
 
             let totalMasuk = 0;
             document.getElementById('lapMasukBody').innerHTML = masukCoa.map(c => {
@@ -2586,14 +2595,18 @@ async function enterApp() {
             }
             const tbody = document.getElementById('coaTableBody');
             if (!tbody) return;
-            tbody.innerHTML = (state.coa || []).map((c, idx) => `
+
+            // Urutkan data COA sebelum dirender ke tabel
+            const sortedCoa = getSortedCoa();
+
+            tbody.innerHTML = sortedCoa.map(c => `
                 <tr>
                     <td class="py-2 px-3 font-extrabold">${c.kode}</td>
                     <td class="py-2 px-3 font-semibold">${c.nama}<span class="block text-[10px] text-slate-400">${c.pembatasan}</span></td>
                     <td class="py-2 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${c.jenis === 'MASUK' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${c.jenis}</span></td>
                     <td class="py-2 px-3 text-amber-800 font-semibold">${c.alokasi}</td>
                     <td class="py-2 px-3 text-center">
-                        <button type="button" onclick="deleteCoaItem(${idx})" class="px-2 py-1 rounded bg-rose-50 text-rose-700 font-bold text-[11px]">Hapus</button>
+                        <button type="button" onclick="deleteCoaItem('${c.kode}')" class="px-2 py-1 rounded bg-rose-50 text-rose-700 font-bold text-[11px]">Hapus</button>
                     </td>
                 </tr>
             `).join('');
@@ -2613,6 +2626,12 @@ async function enterApp() {
             } else {
                 state.coa.push({ kode, nama, jenis, pembatasan, alokasi });
             }
+
+            // Urutkan langsung di state.coa agar dropdown COA di form transaksi ikut terurut
+            state.coa.sort((a, b) => 
+                String(a.kode).localeCompare(String(b.kode), undefined, { numeric: true, sensitivity: 'base' })
+            );
+
             document.getElementById('coaKodeInput').value = '';
             document.getElementById('coaNamaInput').value = '';
             saveState();
@@ -2620,15 +2639,21 @@ async function enterApp() {
             showToast('Pos COA berhasil disimpan!');
         }
 
-        function deleteCoaItem(idx) {
-            state.coa.splice(idx, 1);
-            saveState();
-            refreshAllViews();
-            showToast('Pos COA dihapus.');
+        // Hapus berdasarkan 'kode' akun agar akurat meskipun urutan array berubah
+        function deleteCoaItem(kode) {
+            const idx = state.coa.findIndex(c => c.kode === kode);
+            if (idx !== -1) {
+                state.coa.splice(idx, 1);
+                saveState();
+                refreshAllViews();
+                showToast('Pos COA dihapus.');
+            }
         }
 
         function resetDefaultCoa() {
-            state.coa = JSON.parse(JSON.stringify(DEFAULT_COA));
+            state.coa = JSON.parse(JSON.stringify(DEFAULT_COA)).sort((a, b) => 
+                String(a.kode).localeCompare(String(b.kode), undefined, { numeric: true, sensitivity: 'base' })
+            );
             saveState();
             refreshAllViews();
             showToast('Master COA dikembalikan ke standar pesantren.');
