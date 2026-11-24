@@ -1,0 +1,2734 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIKAP PONTRENMU AL-FURQON — Sistem Informasi Keuangan Pesantren</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        /* Simulasi Mode HP di Desktop */
+        body.mobile-preview-mode {
+            background-color: #cbd5e1;
+            display: flex;
+            justify-content: center;
+            padding: 12px 0;
+        }
+        body.mobile-preview-mode #appWrapper {
+            width: 412px;
+            max-width: 100vw;
+            min-height: calc(100vh - 24px);
+            background-color: #f8fafc;
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35);
+            border: 6px solid #1e293b;
+            overflow-x: hidden;
+        }
+        body.mobile-preview-mode #desktopSidebar {
+            display: none !important;
+        }
+        body.mobile-preview-mode #mobileNavBar {
+            display: flex !important;
+        }
+        /* Pengaturan Cetak Laporan & Kuitansi */
+        @media print {
+            body {
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                font-size: 10px !important;
+            }
+            body.mobile-preview-mode #appWrapper {
+                width: 100% !important;
+                border: none !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+            }
+            .no-print, #desktopSidebar, #mobileNavBar, #topHeader {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .print-compact-grid {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 10px !important;
+            }
+            table {
+                font-size: 9.5px !important;
+            }
+            th, td {
+                padding: 3px 5px !important;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-emerald-100 selection:text-emerald-900">
+
+    <!-- Toast Notification -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none no-print"></div>
+
+    <!-- ========================================================= -->
+    <!-- HALAMAN LOGIN -->
+    <!-- ========================================================= -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-900">
+        <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-emerald-100">
+            <div class="p-6 sm:p-8 bg-emerald-800 text-white text-center relative">
+                <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/25 overflow-hidden">
+                    <img id="loginLogoImg" src="" alt="Logo Pesantren" class="hidden w-full h-full object-cover">
+                    <span id="loginLogoFallback" class="text-2xl font-extrabold tracking-tight">AF</span>
+                </div>
+                <h1 id="loginAppTitle" class="text-xl font-extrabold tracking-tight">SIKAP PONTRENMU AL-FURQON</h1>
+                <p id="loginAppSubtitle" class="text-xs text-emerald-100 mt-1">Sistem Informasi Keuangan & Akuntansi Pesantren (SAK EP)</p>
+            </div>
+            <form onsubmit="handleLogin(event)" class="p-6 sm:p-8 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Username Pengguna</label>
+                    <input type="text" id="loginUsername" required autocomplete="username" placeholder="Masukkan username..." class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Kata Sandi</label>
+                    <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="Masukkan kata sandi..." class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+                </div>
+                <button type="submit" class="w-full py-3.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm shadow-lg shadow-emerald-700/25 transition">
+                    Masuk ke Sistem Keuangan
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- APLIKASI UTAMA -->
+    <!-- ========================================================= -->
+    <div id="appWrapper" class="hidden min-h-screen flex flex-col">
+        <!-- Header Atas -->
+        <header id="topHeader" class="bg-white border-b border-slate-200 sticky top-0 z-30 px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 no-print">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <button type="button" onclick="toggleMobileDrawer()" class="lg:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700" title="Menu Navigasi">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+                <div class="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-extrabold text-sm shrink-0 overflow-hidden">
+                    <img id="headerLogoImg" src="" alt="Logo" class="hidden w-full h-full object-cover">
+                    <span id="headerLogoFallback">AF</span>
+                </div>
+                <div class="min-w-0">
+                    <h1 id="headerAppTitle" class="text-sm sm:text-base font-extrabold text-slate-900 truncate">SIKAP PONTRENMU AL-FURQON</h1>
+                    <p id="headerAppSubtitle" class="text-[11px] text-slate-500 truncate">Sistem Informasi Keuangan & Akuntansi Pesantren</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <!-- Tahun Pelajaran Aktif -->
+                <select id="globalTahunSelect" onchange="handleChangeTahunPelajaran(this.value)" class="px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold outline-none" title="Tahun Pelajaran Aktif">
+                </select>
+
+                <!-- Tombol Sync Cloud -->
+                <button type="button" onclick="syncFromCloud(true)" class="px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-800 text-xs font-bold flex items-center gap-1" title="Sinkronisasi Server Google">
+                    <span>☁️</span>
+                    <span id="cloudSyncStatusText" class="hidden sm:inline">Sync</span>
+                </button>
+
+                <!-- Tombol Toggle Mode HP / Desktop -->
+                <button type="button" id="viewModeToggleBtn" onclick="togglePreviewMode()" class="hidden md:flex px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold items-center gap-1" title="Ubah Tampilan Desktop / HP">
+                    <span id="viewModeIcon">📱</span>
+                    <span id="viewModeLabel">Mode HP</span>
+                </button>
+
+                <!-- Info Peran User & Ganti Password -->
+                <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-200">
+                    <span id="userRoleBadge" class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-700 text-white uppercase">ADMIN</span>
+                    <span id="userNameDisplay" class="text-xs font-semibold text-slate-700">Administrator</span>
+                </div>
+
+                <button type="button" onclick="openPasswordModal()" class="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold" title="Ubah Password">
+                    🔑
+                </button>
+
+                <button type="button" onclick="handleLogout()" class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold" title="Keluar / Logout">
+                    🚪
+                </button>
+            </div>
+        </header>
+
+        <!-- Navigasi Horizontal Mode HP / Mobile -->
+        <nav id="mobileNavBar" class="hidden lg:hidden bg-white border-b border-slate-200 px-2 py-2 overflow-x-auto gap-1.5 no-print">
+            <!-- Diisi otomatis via JS -->
+        </nav>
+
+        <!-- Kontainer Sidebar + Main Content -->
+        <div class="flex-1 flex">
+            <!-- Sidebar Desktop -->
+            <aside id="desktopSidebar" class="hidden lg:flex flex-col w-64 bg-white border-r border-slate-200 p-3 shrink-0 no-print">
+                <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider px-3 py-2">Menu Utama</div>
+                <nav id="sidebarNavContainer" class="space-y-1 flex-1">
+                    <!-- Diisi otomatis via JS -->
+                </nav>
+                <div class="mt-4 p-3 rounded-2xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600">
+                    <p class="font-bold text-slate-800">Pedoman Akuntansi 2024</p>
+                    <p class="mt-0.5 leading-relaxed">Laporan menyesuaikan standar SAK EP & Pedoman Akuntansi Pesantren (IAI-BI).</p>
+                </div>
+            </aside>
+
+            <!-- Area Konten Utama -->
+            <main class="flex-1 p-3 sm:p-6 max-w-full overflow-x-hidden">
+
+                <!-- ================================================= -->
+                <!-- 1. DASHBOARD IKHTISAR -->
+                <!-- ================================================= -->
+                <section id="view-dashboard" class="app-view space-y-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Dashboard Keuangan Pesantren</h2>
+                            <p class="text-xs text-slate-500">Ringkasan arus kas, saldo dompet, pos alokasi anggaran, dan tunggakan santri aktif.</p>
+                        </div>
+                        <button type="button" onclick="switchView('transaksi')" class="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-sm self-start sm:self-auto">
+                            + Input Transaksi Baru
+                        </button>
+                    </div>
+
+                    <!-- Kartu KPI Utama -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-500">Total Penerimaan (TA Aktif)</p>
+                            <p id="kpiTotalMasuk" class="text-lg sm:text-xl font-extrabold text-emerald-700 mt-1">Rp 0</p>
+                            <p class="text-[11px] text-slate-400 mt-1">SPP, Daftar Ulang & Donasi</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-500">Total Pengeluaran (TA Aktif)</p>
+                            <p id="kpiTotalKeluar" class="text-lg sm:text-xl font-extrabold text-rose-600 mt-1">Rp 0</p>
+                            <p class="text-[11px] text-slate-400 mt-1">Operasional, Konsumsi & Pembangunan</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-500">Saldo Kas & Bank Keseluruhan</p>
+                            <p id="kpiSaldoTotal" class="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">Rp 0</p>
+                            <p class="text-[11px] text-slate-400 mt-1">Akumulasi seluruh dompet aktif</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-500">Tunggakan SPP s.d. Bulan Berjalan</p>
+                            <p id="kpiTunggakanSpp" class="text-lg sm:text-xl font-extrabold text-amber-600 mt-1">Rp 0</p>
+                            <p id="kpiSantriAktifInfo" class="text-[11px] text-slate-400 mt-1">0 Santri Aktif</p>
+                        </div>
+                    </div>
+
+                    <!-- Saldo Dompet & Alokasi Pos Anggaran -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <h3 class="text-sm font-extrabold text-slate-800 mb-3 flex items-center justify-between">
+                                <span>Saldo Kas Tunai & Rekening Bank</span>
+                                <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg">Real-Time</span>
+                            </h3>
+                            <div id="dashboardWalletList" class="space-y-2.5"></div>
+                        </div>
+                        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <h3 class="text-sm font-extrabold text-slate-800 mb-3 flex items-center justify-between">
+                                <span>Sisa Dana per Pos Alokasi Anggaran</span>
+                                <span class="text-[11px] font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-lg">Kontrol Pos</span>
+                            </h3>
+                            <div id="dashboardAlokasiList" class="space-y-2.5 max-h-72 overflow-y-auto pr-1"></div>
+                        </div>
+                    </div>
+
+                    <!-- Transaksi Terbaru -->
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-sm font-extrabold text-slate-800">5 Transaksi Terakhir</h3>
+                            <button type="button" onclick="switchView('mutasi')" class="text-xs font-bold text-emerald-700 hover:underline">Lihat Semua Mutasi →</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-200 text-slate-500">
+                                        <th class="py-2 px-2">Tanggal</th>
+                                        <th class="py-2 px-2">Uraian Transaksi</th>
+                                        <th class="py-2 px-2">Dompet / Pos</th>
+                                        <th class="py-2 px-2 text-right">Nominal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboardRecentTrxBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================================================= -->
+                <!-- 2. INPUT TRANSAKSI -->
+                <!-- ================================================= -->
+                <section id="view-transaksi" class="app-view hidden space-y-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Input Transaksi Keuangan</h2>
+                        <p class="text-xs text-slate-500">Catat pembayaran SPP bulanan, Daftar Ulang, maupun Kas Operasional Masuk/Keluar.</p>
+                    </div>
+
+                    <!-- Tab Jenis Input -->
+                    <div class="grid grid-cols-3 gap-2 bg-slate-200/70 p-1.5 rounded-2xl max-w-xl">
+                        <button type="button" id="tabTrxSpp" onclick="selectTrxMode('SPP')" class="py-2 px-3 rounded-xl text-xs font-extrabold bg-emerald-700 text-white shadow-sm transition">
+                            SPP Bulanan
+                        </button>
+                        <button type="button" id="tabTrxDu" onclick="selectTrxMode('DAFTAR_ULANG')" class="py-2 px-3 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-white/60 transition">
+                            Daftar Ulang
+                        </button>
+                        <button type="button" id="tabTrxOps" onclick="selectTrxMode('OPERASIONAL')" class="py-2 px-3 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-white/60 transition">
+                            Kas Operasional
+                        </button>
+                    </div>
+
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm max-w-3xl">
+                        <form onsubmit="handleSaveTransaksi(event)" class="space-y-4">
+                            <input type="hidden" id="trxEditId" value="">
+                            <input type="hidden" id="trxKategori" value="SPP">
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Transaksi</label>
+                                    <input type="date" id="trxTanggal" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold outline-none focus:ring-2 focus:ring-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Jenis Arus Kas</label>
+                                    <select id="trxJenis" onchange="onChangeTrxJenis()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                                        <option value="MASUK">Penerimaan (Kas Masuk)</option>
+                                        <option value="KELUAR">Pengeluaran (Kas Keluar)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Pencarian Santri (Muncul untuk SPP & Daftar Ulang) -->
+                            <div id="trxSantriFieldGroup" class="relative">
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Cari Nama / NIS Santri (Ketik min. 3 huruf)</label>
+                                <input type="hidden" id="trxSantriId" value="">
+                                <input type="text" id="trxSantriSearchInput" oninput="handleSearchTrxSantri(this.value)" placeholder="Ketik minimal 3 huruf nama santri atau NIS..." autocomplete="off" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-emerald-500">
+                                <div id="trxSantriSuggestions" class="hidden absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-20 max-h-48 overflow-y-auto divide-y divide-slate-100 text-xs"></div>
+                                <p id="trxSelectedSantriBadge" class="hidden mt-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200"></p>
+                                <p id="trxSantriPaidHint" class="hidden mt-1 text-[10px] font-semibold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200"></p>
+                            </div>
+
+                            <!-- Multi-Pilih Bulan SPP -->
+                            <div id="trxSppMonthsGroup" class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-xs font-bold text-slate-700">Pilih Bulan SPP (Bisa pilih lebih dari 1 bulan)</label>
+                                    <button type="button" onclick="toggleAllSppMonths()" class="text-[11px] font-bold text-emerald-700 hover:underline">Pilih Semua / Reset</button>
+                                </div>
+                                <div id="trxSppMonthsCheckboxes" class="grid grid-cols-3 sm:grid-cols-4 gap-2 text-xs"></div>
+                            </div>
+
+                            <!-- Multi-Pilih Pos Daftar Ulang -->
+                            <div id="trxDuPosGroup" class="hidden p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-xs font-bold text-slate-700">Pilih Item Daftar Ulang (Bisa pilih beberapa pos)</label>
+                                    <button type="button" onclick="toggleAllDuPos()" class="text-[11px] font-bold text-emerald-700 hover:underline">Pilih Semua / Reset</button>
+                                </div>
+                                <div id="trxDuPosCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs"></div>
+                            </div>
+
+                            <!-- Akun COA, Dompet, Pos Alokasi -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Akun Keuangan (COA)</label>
+                                    <select id="trxCoaKode" onchange="onChangeTrxCoa()" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-emerald-500"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Dompet Kas / Bank</label>
+                                    <select id="trxMetode" onchange="autoFillOperationalDesc()" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-emerald-500"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Pos Alokasi Dana</label>
+                                    <select id="trxAlokasiPos" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-emerald-500"></select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Nominal Transaksi (Rp)</label>
+                                    <input type="number" id="trxNominal" required min="1" placeholder="Contoh: 350000" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-extrabold text-emerald-800 outline-none focus:ring-2 focus:ring-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Keterangan / Uraian Transaksi</label>
+                                    <input type="text" id="trxKeterangan" required placeholder="Otomatis terisi atau ketik uraian..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-emerald-500">
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2 pt-2">
+                                <button type="submit" id="trxSubmitBtn" class="flex-1 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs shadow-md transition">
+                                    Simpan Transaksi & Cetak Kuitansi
+                                </button>
+                                <button type="button" id="trxCancelEditBtn" onclick="cancelEditTransaksi()" class="hidden px-4 py-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs">
+                                    Batal Edit
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- ================================================= -->
+                <!-- 3. BUKU KAS UMUM & RIWAYAT MUTASI -->
+                <!-- ================================================= -->
+                <section id="view-mutasi" class="app-view hidden space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Buku Kas Umum & Riwayat Mutasi</h2>
+                            <p class="text-xs text-slate-500">Catatan seluruh transaksi pemasukan dan pengeluaran pesantren.</p>
+                        </div>
+                        <div class="flex items-center gap-2 no-print">
+                            <span id="mutasiCountBadge" class="px-3 py-1.5 rounded-xl bg-slate-200 text-slate-800 text-xs font-bold">Jumlah Data: 0</span>
+                            <button type="button" onclick="printElement('mutasiPrintArea')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold">
+                                🖨️ Cetak Mutasi
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter Mutasi -->
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-2.5 no-print">
+                        <input type="text" id="filterMutasiSearch" oninput="renderMutasiTable()" placeholder="Cari uraian / nama santri..." class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+                        <select id="filterMutasiJenis" onchange="renderMutasiTable()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+                            <option value="ALL">Semua Jenis (Masuk & Keluar)</option>
+                            <option value="MASUK">Penerimaan (Kas Masuk)</option>
+                            <option value="KELUAR">Pengeluaran (Kas Keluar)</option>
+                        </select>
+                        <select id="filterMutasiBulan" onchange="renderMutasiTable()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+                            <option value="ALL">Semua Bulan Kalender</option>
+                            <option value="07">Bulan Juli</option>
+                            <option value="08">Bulan Agustus</option>
+                            <option value="09">Bulan September</option>
+                            <option value="10">Bulan Oktober</option>
+                            <option value="11">Bulan November</option>
+                            <option value="12">Bulan Desember</option>
+                            <option value="01">Bulan Januari</option>
+                            <option value="02">Bulan Februari</option>
+                            <option value="03">Bulan Maret</option>
+                            <option value="04">Bulan April</option>
+                            <option value="05">Bulan Mei</option>
+                            <option value="06">Bulan Juni</option>
+                        </select>
+                        <select id="filterMutasiWallet" onchange="renderMutasiTable()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+                            <option value="ALL">Semua Dompet Kas/Bank</option>
+                        </select>
+                    </div>
+
+                    <div id="mutasiPrintArea" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b-2 border-slate-200 text-slate-600 bg-slate-50">
+                                    <th class="py-2.5 px-2 w-10 text-center">No</th>
+                                    <th class="py-2.5 px-2">Tanggal</th>
+                                    <th class="py-2.5 px-2">Akun / Kategori</th>
+                                    <th class="py-2.5 px-2">Uraian & Santri</th>
+                                    <th class="py-2.5 px-2">Dompet / Pos</th>
+                                    <th class="py-2.5 px-2 text-right">Masuk</th>
+                                    <th class="py-2.5 px-2 text-right">Keluar</th>
+                                    <th class="py-2.5 px-2 text-center no-print">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mutasiTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ================================================= -->
+                <!-- 4. DATA SANTRI & KENAIKAN KELAS -->
+                <!-- ================================================= -->
+                <section id="view-santri" class="app-view hidden space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Direktori Data Santri</h2>
+                            <p class="text-xs text-slate-500">Kelola data santri, tarif SPP, tagihan Daftar Ulang, serta kenaikan kelas massal.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span id="santriCountBadge" class="px-3 py-1.5 rounded-xl bg-slate-200 text-slate-800 text-xs font-bold">Jumlah Data: 0</span>
+                            <button type="button" onclick="openSantriModal()" class="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold">
+                                + Tambah Santri
+                            </button>
+                            <button type="button" id="btnPromoteSantri" onclick="promoteActiveSantriYear()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">
+                                🎓 Naik Kelas Massal
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter & Aksi Massal Santri -->
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                            <input type="text" id="filterSantriSearch" oninput="renderSantriTable()" placeholder="Cari nama atau NIS santri..." class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+                            <select id="filterSantriKelas" onchange="renderSantriTable()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+                                <option value="ALL">Semua Kelas</option>
+                            </select>
+                            <select id="filterSantriStatus" onchange="renderSantriTable()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+                                <option value="ALL">Semua Status</option>
+                                <option value="AKTIF" selected>Santri Aktif</option>
+                                <option value="LULUS">Lulus / Alumni</option>
+                                <option value="KELUAR">Keluar / Pindah</option>
+                            </select>
+                        </div>
+
+                        <!-- Bar Aksi Massal Saat Santri Dicentang -->
+                        <div id="santriBulkActionBar" class="hidden p-2.5 rounded-xl bg-amber-50 border border-amber-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+                            <span id="santriSelectedCountText" class="font-bold text-amber-900">0 santri dipilih</span>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <input type="text" id="bulkEditKelasInput" placeholder="Kelas baru (misal: 8A)" class="px-2.5 py-1.5 rounded-lg border border-amber-300 bg-white text-xs w-36">
+                                <select id="bulkEditStatusSelect" class="px-2.5 py-1.5 rounded-lg border border-amber-300 bg-white text-xs">
+                                    <option value="">-- Ubah Status --</option>
+                                    <option value="AKTIF">AKTIF</option>
+                                    <option value="LULUS">LULUS</option>
+                                    <option value="KELUAR">KELUAR</option>
+                                </select>
+                                <button type="button" onclick="applyBulkEditSantri()" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold">Terapkan</button>
+                                <button type="button" id="btnBulkDeleteSantri" onclick="applyBulkDeleteSantri()" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold">Hapus Terpilih</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b-2 border-slate-200 text-slate-600 bg-slate-50">
+                                    <th class="py-2.5 px-2 w-8 text-center">
+                                        <input type="checkbox" id="santriCheckAll" onchange="toggleSelectAllSantri(this.checked)" class="rounded">
+                                    </th>
+                                    <th class="py-2.5 px-2 w-10 text-center">No</th>
+                                    <th class="py-2.5 px-2">NIS</th>
+                                    <th class="py-2.5 px-2">Nama Lengkap</th>
+                                    <th class="py-2.5 px-2">Kelas</th>
+                                    <th class="py-2.5 px-2 text-right">Tarif SPP/Bln</th>
+                                    <th class="py-2.5 px-2 text-right">Target Daftar Ulang</th>
+                                    <th class="py-2.5 px-2 text-center">Status</th>
+                                    <th class="py-2.5 px-2 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="santriTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ================================================= -->
+                <!-- 5. REKAP SPP BULANAN -->
+                <!-- ================================================= -->
+                <section id="view-rekap-spp" class="app-view hidden space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Rekapitulasi Pembayaran SPP Bulanan</h2>
+                            <p id="rekapSppSubtitle" class="text-xs text-slate-500">Tunggakan dihitung kumulatif dari bulan Juli sampai bulan berjalan.</p>
+                        </div>
+                        <div class="flex items-center gap-2 no-print">
+                            <span id="rekapSppCountBadge" class="px-3 py-1.5 rounded-xl bg-slate-200 text-slate-800 text-xs font-bold">Jumlah Data: 0</span>
+                            <button type="button" onclick="printElement('rekapSppPrintArea')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold">
+                                🖨️ Cetak Rekap SPP
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-2.5 no-print">
+                        <input type="text" id="filterRekapSppSearch" oninput="renderRekapSpp()" placeholder="Cari nama / NIS santri..." class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+                        <select id="filterRekapSppKelas" onchange="renderRekapSpp()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+                            <option value="ALL">Semua Kelas</option>
+                        </select>
+                        <select id="filterRekapSppStatus" onchange="renderRekapSpp()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+                            <option value="ALL">Semua Status Pembayaran</option>
+                            <option value="MENUNGGAK">Memiliki Tunggakan s.d. Bulan Ini</option>
+                            <option value="LUNAS">Lunas s.d. Bulan Ini</option>
+                        </select>
+                    </div>
+
+                    <div id="rekapSppPrintArea" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-[11px]">
+                            <thead>
+                                <tr class="border-b-2 border-slate-200 text-slate-600 bg-slate-50">
+                                    <th class="py-2 px-1.5 text-center">No</th>
+                                    <th class="py-2 px-1.5">Nama Santri</th>
+                                    <th class="py-2 px-1.5">Kls</th>
+                                    <th class="py-2 px-1 text-center">Jul</th>
+                                    <th class="py-2 px-1 text-center">Agu</th>
+                                    <th class="py-2 px-1 text-center">Sep</th>
+                                    <th class="py-2 px-1 text-center">Okt</th>
+                                    <th class="py-2 px-1 text-center">Nov</th>
+                                    <th class="py-2 px-1 text-center">Des</th>
+                                    <th class="py-2 px-1 text-center">Jan</th>
+                                    <th class="py-2 px-1 text-center">Feb</th>
+                                    <th class="py-2 px-1 text-center">Mar</th>
+                                    <th class="py-2 px-1 text-center">Apr</th>
+                                    <th class="py-2 px-1 text-center">Mei</th>
+                                    <th class="py-2 px-1 text-center">Jun</th>
+                                    <th class="py-2 px-2 text-right">Terbayar</th>
+                                    <th class="py-2 px-2 text-right">Tunggakan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rekapSppTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ================================================= -->
+                <!-- 6. REKAP DAFTAR ULANG -->
+                <!-- ================================================= -->
+                <section id="view-rekap-du" class="app-view hidden space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Rekapitulasi Daftar Ulang & Pangkal</h2>
+                            <p class="text-xs text-slate-500">Pemantauan cicilan dan pelunasan daftar ulang santri aktif.</p>
+                        </div>
+                        <div class="flex items-center gap-2 no-print">
+                            <span id="rekapDuCountBadge" class="px-3 py-1.5 rounded-xl bg-slate-200 text-slate-800 text-xs font-bold">Jumlah Data: 0</span>
+                            <button type="button" onclick="printElement('rekapDuPrintArea')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold">
+                                🖨️ Cetak Rekap Daftar Ulang
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-2.5 no-print">
+                        <input type="text" id="filterRekapDuSearch" oninput="renderRekapDu()" placeholder="Cari nama / NIS santri..." class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+                        <select id="filterRekapDuKelas" onchange="renderRekapDu()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+                            <option value="ALL">Semua Kelas</option>
+                        </select>
+                    </div>
+
+                    <div id="rekapDuPrintArea" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b-2 border-slate-200 text-slate-600 bg-slate-50">
+                                    <th class="py-2.5 px-2 w-10 text-center">No</th>
+                                    <th class="py-2.5 px-2">NIS</th>
+                                    <th class="py-2.5 px-2">Nama Santri</th>
+                                    <th class="py-2.5 px-2">Kelas</th>
+                                    <th class="py-2.5 px-2 text-right">Target Tagihan</th>
+                                    <th class="py-2.5 px-2 text-right">Sudah Dibayar</th>
+                                    <th class="py-2.5 px-2 text-right">Sisa Kekurangan</th>
+                                    <th class="py-2.5 px-2 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rekapDuTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ================================================= -->
+                <!-- 7. RIWAYAT SANTRI LINTAS TAHUN -->
+                <!-- ================================================= -->
+                <section id="view-history-santri" class="app-view hidden space-y-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Kartu Riwayat Pembayaran Santri Lintas Tahun</h2>
+                        <p class="text-xs text-slate-500">Cek riwayat lengkap pembayaran santri dari awal masuk hingga lulus.</p>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 max-w-xl relative">
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Cari Santri (Nama atau NIS)</label>
+                        <input type="text" id="historySantriSearchInput" oninput="handleSearchHistorySantri(this.value)" placeholder="Ketik nama atau NIS santri..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-emerald-500">
+                        <div id="historySantriResults" class="hidden mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-52 overflow-y-auto divide-y divide-slate-100 text-xs"></div>
+                    </div>
+
+                    <div id="historySantriDetailCard" class="hidden bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
+                            <div>
+                                <h3 id="histSantriName" class="text-base font-extrabold text-slate-900">-</h3>
+                                <p id="histSantriMeta" class="text-xs text-slate-500">-</p>
+                            </div>
+                            <button type="button" onclick="printElement('historySantriDetailCard')" class="px-3.5 py-2 rounded-xl bg-slate-800 text-white text-xs font-bold no-print self-start">
+                                🖨️ Cetak Kartu Riwayat
+                            </button>
+                        </div>
+                        <div id="histSantriTimeline" class="space-y-4"></div>
+                    </div>
+                </section>
+
+                <!-- ================================================= -->
+                <!-- 8. LAPORAN KEUANGAN (PEDOMAN AKUNTANSI PESANTREN) -->
+                <!-- ================================================= -->
+                <section id="view-laporan" class="app-view hidden space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 no-print">
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Laporan Aktivitas Keuangan Pesantren</h2>
+                            <p class="text-xs text-slate-500">Format penyajian mengacu Pedoman Akuntansi Pesantren (SAK EP) & tata letak cetak hemat kertas.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <select id="filterLaporanBulan" onchange="renderLaporanKeuangan()" class="px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-bold outline-none">
+                                <option value="ALL">Seluruh Tahun Pelajaran</option>
+                                <option value="07">Periode Bulan Juli</option>
+                                <option value="08">Periode Bulan Agustus</option>
+                                <option value="09">Periode Bulan September</option>
+                                <option value="10">Periode Bulan Oktober</option>
+                                <option value="11">Periode Bulan November</option>
+                                <option value="12">Periode Bulan Desember</option>
+                                <option value="01">Periode Bulan Januari</option>
+                                <option value="02">Periode Bulan Februari</option>
+                                <option value="03">Periode Bulan Maret</option>
+                                <option value="04">Periode Bulan April</option>
+                                <option value="05">Periode Bulan Mei</option>
+                                <option value="06">Periode Bulan Juni</option>
+                            </select>
+                            <button type="button" onclick="printElement('laporanKeuanganPrintArea')" class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-sm">
+                                🖨️ Cetak Laporan Keuangan
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="laporanKeuanganPrintArea" class="bg-white p-5 sm:p-7 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <!-- Kop Laporan -->
+                        <div class="text-center border-b-2 border-slate-800 pb-3">
+                            <h3 id="lapKopTitle" class="text-base sm:text-lg font-extrabold uppercase tracking-wide text-slate-900">PONDOK PESANTREN MUHAMMADIYAH AL-FURQON</h3>
+                            <p id="lapKopAddress" class="text-xs text-slate-600">Alamat Pesantren</p>
+                            <p class="text-xs font-extrabold text-emerald-800 mt-1 uppercase">LAPORAN AKTIVITAS KEUANGAN (PEDOMAN AKUNTANSI PESANTREN)</p>
+                            <p id="lapPeriodeSubtitle" class="text-xs font-semibold text-slate-700">Tahun Pelajaran 2026/2027 • Seluruh Tahun Pelajaran</p>
+                        </div>
+
+                        <!-- Grid Kiri (Penerimaan) & Kanan (Beban) Hemat Kertas -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 print-compact-grid">
+                            <!-- KIRI: PENGHASILAN / PENERIMAAN -->
+                            <div class="border border-slate-200 rounded-xl p-3">
+                                <h4 class="text-xs font-extrabold uppercase text-emerald-800 bg-emerald-50 px-2.5 py-1.5 rounded-lg mb-2">I. Penghasilan / Penerimaan</h4>
+                                <table class="w-full text-xs">
+                                    <tbody id="lapPenerimaanBody" class="divide-y divide-slate-100"></tbody>
+                                    <tfoot>
+                                        <tr class="border-t-2 border-slate-300 font-extrabold bg-slate-50">
+                                            <td class="py-2 px-2">Total Penghasilan / Penerimaan</td>
+                                            <td id="lapTotalMasuk" class="py-2 px-2 text-right text-emerald-700">Rp 0</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            <!-- KANAN: BEBAN / PENGELUARAN -->
+                            <div class="border border-slate-200 rounded-xl p-3">
+                                <h4 class="text-xs font-extrabold uppercase text-rose-800 bg-rose-50 px-2.5 py-1.5 rounded-lg mb-2">II. Beban / Pengeluaran</h4>
+                                <table class="w-full text-xs">
+                                    <tbody id="lapPengeluaranBody" class="divide-y divide-slate-100"></tbody>
+                                    <tfoot>
+                                        <tr class="border-t-2 border-slate-300 font-extrabold bg-slate-50">
+                                            <td class="py-2 px-2">Total Beban / Pengeluaran</td>
+                                            <td id="lapTotalKeluar" class="py-2 px-2 text-right text-rose-700">Rp 0</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Ikhtisar Kenaikan / Penurunan Aset Neto -->
+                        <div class="p-3.5 rounded-xl bg-slate-100 border border-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-extrabold">
+                            <span>KENAIKAN (PENURUNAN) ASET NETO PERIODE BERJALAN</span>
+                            <span id="lapSurplusDefisit" class="text-sm text-slate-900">Rp 0</span>
+                        </div>
+
+                        <!-- Pengesahan TTD Mudir & Bendahara -->
+                        <div class="pt-4 grid grid-cols-2 gap-6 text-center text-xs">
+                            <div class="space-y-14">
+                                <div>
+                                    <p class="text-slate-600">Mengetahui,</p>
+                                    <p class="font-bold text-slate-800">Mudir / Pimpinan Pesantren</p>
+                                </div>
+                                <p id="lapTtdMudir" class="font-extrabold underline text-slate-900">Ust. Pimpinan Pesantren</p>
+                            </div>
+                            <div class="space-y-14">
+                                <div>
+                                    <p id="lapTempatTanggal" class="text-slate-600">Bandar Lampung, 18 November 2026</p>
+                                    <p class="font-bold text-slate-800">Bendahara Pesantren</p>
+                                </div>
+                                <p id="lapTtdBendahara" class="font-extrabold underline text-slate-900">Bendahara Umum</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================================================= -->
+                <!-- 9. MASTER AKUN (COA) & POS ALOKASI (ADMIN) -->
+                <!-- ================================================= -->
+                <section id="view-coa" class="app-view hidden space-y-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Master Chart of Accounts (COA) & Pos Anggaran</h2>
+                        <p class="text-xs text-slate-500">Pengaturan kode akun akuntansi pesantren sesuai Pedoman Akuntansi Pesantren.</p>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 max-w-3xl">
+                        <form onsubmit="handleAddCoa(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+                            <input type="text" id="newCoaKode" required placeholder="Kode (mis: 4105)" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+                            <input type="text" id="newCoaNama" required placeholder="Nama Akun COA" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none sm:col-span-2">
+                            <select id="newCoaTipe" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+                                <option value="MASUK">Penerimaan (4xxx)</option>
+                                <option value="KELUAR">Pengeluaran / Beban (5xxx)</option>
+                            </select>
+                            <button type="submit" class="sm:col-span-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold">
+                                + Tambah Akun COA Baru
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b-2 border-slate-200 text-slate-600 bg-slate-50">
+                                    <th class="py-2.5 px-2">Kode</th>
+                                    <th class="py-2.5 px-2">Nama Akun Keuangan</th>
+                                    <th class="py-2.5 px-2">Kelompok Arus</th>
+                                    <th class="py-2.5 px-2 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="coaTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ================================================= -->
+                <!-- 10. PENGATURAN SISTEM, CLOUD SYNC & ASISTEN AI -->
+                <!-- ================================================= -->
+                <section id="view-pengaturan" class="app-view hidden space-y-5">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Pengaturan Sistem & Integrasi Cloud</h2>
+                        <p class="text-xs text-slate-500">Sesuaikan identitas lembaga, tempat/tanggal tanda tangan laporan, sinkronisasi Google, serta Asisten AI.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <!-- Identitas Lembaga & TTD Laporan -->
+                        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                            <h3 class="text-sm font-extrabold text-slate-800">Identitas Aplikasi & Pengesahan Laporan</h3>
+                            <form onsubmit="handleSaveSettings(event)" class="space-y-3 text-xs">
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">Nama Aplikasi</label>
+                                    <input type="text" id="setAppName" required class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">Keterangan / Subjudul Nama Aplikasi</label>
+                                    <input type="text" id="setAppSubtitle" required class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">Nama Resmi Pondok Pesantren (Kop Laporan)</label>
+                                    <input type="text" id="setSchoolName" required class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">Alamat Lengkap Pesantren</label>
+                                    <input type="text" id="setSchoolAddress" required class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label class="block font-bold text-slate-700 mb-1">Nama Mudir / Pimpinan</label>
+                                        <input type="text" id="setMudirName" required class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block font-bold text-slate-700 mb-1">Nama Bendahara</label>
+                                        <input type="text" id="setBendaharaName" required class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">Tempat & Tanggal Cetak Laporan</label>
+                                    <input type="text" id="setPrintPlaceDate" required placeholder="Contoh: Bandar Lampung, 18 November 2026" class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-700 mb-1">URL Logo Pesantren (Opsional)</label>
+                                    <input type="url" id="setLogoUrl" placeholder="https://..." class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                                </div>
+                                <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold">
+                                    Simpan Identitas & Pengaturan
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Sinkronisasi Server Google & Backup Offline -->
+                        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                            <h3 class="text-sm font-extrabold text-slate-800">Sinkronisasi Server Google & Backup Data</h3>
+                            <div class="space-y-2 text-xs">
+                                <label class="block font-bold text-slate-700">URL Web App Google Apps Script (/exec)</label>
+                                <input type="url" id="setGasUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 outline-none">
+                                <div class="flex flex-wrap gap-2 pt-1">
+                                    <button type="button" onclick="saveGasUrl()" class="px-3.5 py-2 rounded-xl bg-sky-700 hover:bg-sky-800 text-white font-bold">Simpan URL</button>
+                                    <button type="button" onclick="pushToCloudManual()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">☁️ Kirim ke Cloud</button>
+                                    <button type="button" onclick="syncFromCloud(true)" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold">☁️ Tarik dari Cloud</button>
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-t border-slate-200 space-y-2 text-xs">
+                                <p class="font-bold text-slate-700">Backup & Restore File JSON Offline</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button" onclick="downloadBackupJson()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold">
+                                        ⬇️ Download Backup (.json)
+                                    </button>
+                                    <label class="px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold cursor-pointer">
+                                        ⬆️ Restore dari File (.json)
+                                        <input type="file" accept=".json" onchange="restoreBackupJson(event)" class="hidden">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-t border-slate-200 space-y-2 text-xs">
+                                <p class="font-bold text-slate-700">Tambah Tahun Pelajaran Baru</p>
+                                <div class="flex gap-2">
+                                    <input type="text" id="newTahunInput" placeholder="Contoh: 2028/2029" class="flex-1 px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                                    <button type="button" onclick="handleAddTahunPelajaran()" class="px-3.5 py-2 rounded-xl bg-emerald-700 text-white font-bold">+ Tambah</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ASISTEN AI KEUANGAN PESANTREN -->
+                    <div class="bg-gradient-to-br from-slate-900 to-emerald-950 text-white p-5 rounded-2xl shadow-lg space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm sm:text-base font-extrabold flex items-center gap-2">
+                                    <span>🤖 Asisten AI Keuangan & Akuntansi Pesantren</span>
+                                </h3>
+                                <p class="text-xs text-emerald-200 mt-0.5">Analisis kesehatan arus kas, posisi alokasi dana, dan draf Catatan atas Laporan Keuangan (SAK EP).</p>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-1.5 text-[11px]">
+                            <button type="button" onclick="setAiQuickPrompt('Analisis kondisi arus kas dan sisa dana per pos alokasi tahun pelajaran aktif ini.')" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15">
+                                📊 Analisis Arus Kas & Pos Dana
+                            </button>
+                            <button type="button" onclick="setAiQuickPrompt('Buatkan draf Catatan atas Laporan Keuangan (CaLK) singkat sesuai Pedoman Akuntansi Pesantren 2024.')" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15">
+                                📝 Draf CaLK (SAK EP 2024)
+                            </button>
+                            <button type="button" onclick="setAiQuickPrompt('Berikan strategi penagihan tunggakan SPP santri yang santun dan efektif untuk bendahara pesantren.')" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15">
+                                💡 Strategi Penagihan SPP
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <input type="text" id="aiAssistantPrompt" placeholder="Tanyakan analisis keuangan pesantren di sini..." class="flex-1 px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-300 text-xs outline-none focus:ring-2 focus:ring-emerald-400">
+                            <button type="button" id="aiAssistantBtn" onclick="askFinancialAiAssistant()" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shrink-0">
+                                Kirim ke AI
+                            </button>
+                        </div>
+
+                        <pre id="aiAssistantResponseBox" class="hidden p-3.5 rounded-xl bg-black/30 border border-white/15 text-xs text-emerald-50 whitespace-pre-wrap font-sans leading-relaxed"></pre>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL TAMBAH / EDIT SANTRI -->
+    <!-- ========================================================= -->
+    <div id="santriModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <h3 id="santriModalTitle" class="text-sm font-extrabold text-slate-900">Tambah Data Santri</h3>
+                <button type="button" onclick="closeSantriModal()" class="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+            </div>
+            <form onsubmit="handleSaveSantri(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="editSantriId" value="">
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">NIS Santri</label>
+                        <input type="text" id="formSantriNis" required placeholder="2026001" class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Kelas</label>
+                        <input type="text" id="formSantriKelas" required placeholder="7A / 10 IPA" class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Nama Lengkap Santri</label>
+                    <input type="text" id="formSantriNama" required placeholder="Nama lengkap sesuai akta" class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Tarif SPP / Bulan (Rp)</label>
+                        <input type="number" id="formSantriSpp" required min="0" value="350000" class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Target Daftar Ulang (Rp)</label>
+                        <input type="number" id="formSantriDu" required min="0" value="1500000" class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Status Santri</label>
+                    <select id="formSantriStatus" class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                        <option value="AKTIF">AKTIF</option>
+                        <option value="LULUS">LULUS</option>
+                        <option value="KELUAR">KELUAR</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeSantriModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold">Simpan Data Santri</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL KUITANSI PEMBAYARAN -->
+    <!-- ========================================================= -->
+    <div id="receiptModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+            <div id="receiptPrintBox" class="border-2 border-slate-800 rounded-xl p-4 space-y-3 text-xs">
+                <div class="text-center border-b border-slate-300 pb-2">
+                    <h4 id="recSchoolName" class="font-extrabold text-sm uppercase">PONTRENMU AL-FURQON</h4>
+                    <p class="text-[11px] text-slate-600">BUKTI TRANSAKSI KEUANGAN PESANTREN</p>
+                </div>
+                <div id="receiptDetailContent" class="space-y-1.5"></div>
+                <div class="pt-3 border-t border-dashed border-slate-300 flex justify-between text-[11px] text-slate-600">
+                    <span id="recDatePlace">Tanggal: -</span>
+                    <span class="font-bold">Petugas Kasir</span>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 no-print">
+                <button type="button" onclick="closeReceiptModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold">Tutup</button>
+                <button type="button" onclick="printElement('receiptPrintBox')" class="px-4 py-2 rounded-xl bg-emerald-700 text-white text-xs font-bold">🖨️ Cetak Kuitansi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL UBAH PASSWORD -->
+    <div id="passwordModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <h3 class="text-sm font-extrabold text-slate-900">Ubah Kata Sandi Akun</h3>
+                <button type="button" onclick="closePasswordModal()" class="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+            </div>
+            <form onsubmit="handleChangePassword(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Kata Sandi Baru</label>
+                    <input type="password" id="newPasswordInput" required minlength="3" placeholder="Masukkan kata sandi baru..." class="w-full px-3 py-2 rounded-xl border border-slate-300 outline-none">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closePasswordModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold">Simpan Sandi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // KONSTANTA & DATA DEFAULT SISTEM
+        // ==========================================
+        const STORAGE_KEY = 'SIKAP_ALFURQON_DB_V4';
+        const SESSION_KEY = 'SIKAP_ALFURQON_SESSION_V4';
+        const DEFAULT_CLOUD_SERVER_URL = 'https://script.google.com/macros/s/AKfycbyktDJBaXN4Ld_VHf5fEJPZsfupJ-1gILPuYrQmrpg64zg3Az56-1Rloglc34up4nTK/exec';
+
+        const BULAN_TAHUN_AJARAN = [
+            { kode: '07', nama: 'Juli' },
+            { kode: '08', nama: 'Agustus' },
+            { kode: '09', nama: 'September' },
+            { kode: '10', nama: 'Oktober' },
+            { kode: '11', nama: 'November' },
+            { kode: '12', nama: 'Desember' },
+            { kode: '01', nama: 'Januari' },
+            { kode: '02', nama: 'Februari' },
+            { kode: '03', nama: 'Maret' },
+            { kode: '04', nama: 'April' },
+            { kode: '05', nama: 'Mei' },
+            { kode: '06', nama: 'Juni' }
+        ];
+
+        const NAMA_BULAN_MAP = {
+            '01': 'Januari',
+            '02': 'Februari',
+            '03': 'Maret',
+            '04': 'April',
+            '05': 'Mei',
+            '06': 'Juni',
+            '07': 'Juli',
+            '08': 'Agustus',
+            '09': 'September',
+            '10': 'Oktober',
+            '11': 'November',
+            '12': 'Desember'
+        };
+
+        const DEFAULT_COA = [
+            { kode: '4101', nama: 'Penerimaan Syahriah / SPP Santri', jenis: 'MASUK', tipe: 'MASUK' },
+            { kode: '4102', nama: 'Penerimaan Daftar Ulang & Pangkal', jenis: 'MASUK', tipe: 'MASUK' },
+            { kode: '4103', nama: 'Infaq & Wakaf Pembangunan Pesantren', jenis: 'MASUK', tipe: 'MASUK' },
+            { kode: '4104', nama: 'Penerimaan Donasi / ZIS Tidak Terikat', jenis: 'MASUK', tipe: 'MASUK' },
+            { kode: '5101', nama: 'Beban Gaji / Mukafaah Asatidz & Staf', jenis: 'KELUAR', tipe: 'KELUAR' },
+            { kode: '5102', nama: 'Beban Konsumsi & Dapur Santri', jenis: 'KELUAR', tipe: 'KELUAR' },
+            { kode: '5103', nama: 'Belanja Seragam, Kitab & Perlengkapan', jenis: 'KELUAR', tipe: 'KELUAR' },
+            { kode: '5104', nama: 'Belanja Pembangunan & Pemeliharaan Gedung', jenis: 'KELUAR', tipe: 'KELUAR' },
+            { kode: '5105', nama: 'Beban Listrik, Air, Internet & Operasional', jenis: 'KELUAR', tipe: 'KELUAR' }
+        ];
+
+        const DEFAULT_STATE = {
+            settings: {
+                appName: 'SIKAP PONTRENMU AL-FURQON',
+                appSubtitle: 'Sistem Informasi Keuangan & Akuntansi Pesantren (SAK EP)',
+                schoolName: 'PONDOK PESANTREN MUHAMMADIYAH AL-FURQON',
+                schoolAddress: 'Jl. Pendidikan Pesantren No. 1, Bandar Lampung',
+                mudirName: 'Ust. H. Ahmad Mudir, Lc., M.Pd.',
+                bendaharaName: 'Ust. Muhammad Bendahara, S.E.',
+                printPlaceDate: 'Bandar Lampung, 24 November 2026',
+                logoUrl: '',
+                tahunAktif: '2026/2027',
+                daftarTahun: ['2025/2026', '2026/2027', '2027/2028'],
+                gasUrl: DEFAULT_CLOUD_SERVER_URL,
+                lastUpdated: 0
+            },
+            users: [
+                { id: 'U-1', name: 'Administrator Keuangan', username: 'admin', password: '123', role: 'ADMIN' },
+                { id: 'U-2', name: 'Petugas Kasir Harian', username: 'kasir', password: '123', role: 'KASIR' }
+            ],
+            wallets: [
+                { id: 'W-TUNAI', nama: 'Kas Besar Tunai', saldoAwal: 0 },
+                { id: 'W-BANK', nama: 'Rekening Bank Pesantren', saldoAwal: 0 }
+            ],
+            alokasiPos: [
+                { id: 'POS-SPP', nama: 'Dana Pendidikan & SPP' },
+                { id: 'POS-DU', nama: 'Dana Seragam & Perlengkapan' },
+                { id: 'POS-BANGUNAN', nama: 'Dana Pembangunan & Sarpras' },
+                { id: 'POS-KONSUMSI', nama: 'Dana Konsumsi & Dapur' },
+                { id: 'POS-OPS', nama: 'Dana Operasional Umum' }
+            ],
+            duItems: [
+                { id: 'DU-1', nama: 'Seragam & Atribut', nominal: 600000 },
+                { id: 'DU-2', nama: 'Kitab & Modul Pelajaran', nominal: 450000 },
+                { id: 'DU-3', nama: 'Kegiatan & Kesehatan Santri', nominal: 450000 }
+            ],
+            coa: JSON.parse(JSON.stringify(DEFAULT_COA)),
+            santri: [
+                { id: 'S-1', nis: '2026001', nama: 'Ahmad Fauzi Al-Ghifari', kelas: '7A', sppBulanan: 350000, targetDu: 1500000, status: 'AKTIF' },
+                { id: 'S-2', nis: '2026002', nama: 'Muhammad Zaki Ramadhan', kelas: '8A', sppBulanan: 350000, targetDu: 1500000, status: 'AKTIF' },
+                { id: 'S-3', nis: '2026003', nama: 'Aisyah Putri Azzahra', kelas: '10A', sppBulanan: 400000, targetDu: 1500000, status: 'AKTIF' }
+            ],
+            transaksi: []
+        };
+
+        function normalizeStateData(raw) {
+            const merged = JSON.parse(JSON.stringify(DEFAULT_STATE));
+            if (!raw || typeof raw !== 'object') return merged;
+            merged.settings = { ...merged.settings, ...(raw.settings || {}) };
+            if (!Array.isArray(merged.settings.daftarTahun) || merged.settings.daftarTahun.length === 0) {
+                merged.settings.daftarTahun = [...DEFAULT_STATE.settings.daftarTahun];
+            }
+            if (!merged.settings.tahunAktif) {
+                merged.settings.tahunAktif = merged.settings.daftarTahun[0];
+            }
+            if (DEFAULT_CLOUD_SERVER_URL && DEFAULT_CLOUD_SERVER_URL.trim()) {
+                merged.settings.gasUrl = DEFAULT_CLOUD_SERVER_URL.trim();
+            }
+            merged.users = Array.isArray(raw.users) && raw.users.length ? raw.users : DEFAULT_STATE.users;
+            merged.wallets = Array.isArray(raw.wallets) && raw.wallets.length ? raw.wallets : DEFAULT_STATE.wallets;
+            merged.alokasiPos = Array.isArray(raw.alokasiPos) && raw.alokasiPos.length ? raw.alokasiPos : DEFAULT_STATE.alokasiPos;
+            merged.duItems = Array.isArray(raw.duItems) && raw.duItems.length ? raw.duItems : DEFAULT_STATE.duItems;
+            merged.coa = Array.isArray(raw.coa) && raw.coa.length
+                ? raw.coa.map(c => ({
+                    kode: String(c.kode || '').trim(),
+                    nama: String(c.nama || '').trim(),
+                    jenis: (c.jenis || c.tipe || 'MASUK').toUpperCase() === 'KELUAR' ? 'KELUAR' : 'MASUK',
+                    tipe: (c.jenis || c.tipe || 'MASUK').toUpperCase() === 'KELUAR' ? 'KELUAR' : 'MASUK'
+                }))
+                : JSON.parse(JSON.stringify(DEFAULT_COA));
+            merged.santri = Array.isArray(raw.santri) ? raw.santri : [];
+            merged.transaksi = Array.isArray(raw.transaksi) ? raw.transaksi : [];
+            return merged;
+        }
+
+        function loadInitialState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) return normalizeStateData(JSON.parse(raw));
+            } catch (err) {
+                console.warn('Gagal memuat state lokal:', err);
+            }
+            return normalizeStateData(DEFAULT_STATE);
+        }
+
+        let state = loadInitialState();
+        let currentUser = null;
+        let selectedSantriIds = new Set();
+
+        function saveState(autoPush = true) {
+            try {
+                state.settings.lastUpdated = Date.now();
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                if (autoPush && state.settings.gasUrl) {
+                    pushToCloudSilent();
+                }
+            } catch (err) {
+                showToast('Gagal menyimpan data lokal.', true);
+            }
+        }
+
+        // Fungsi helper untuk mengurutkan daftar COA berdasarkan kode dari yang terkecil ke terbesar
+        function getSortedCoaList(filterTipe = null) {
+            const list = Array.isArray(state.coa) ? [...state.coa] : [];
+            return list
+                .filter(c => {
+                    if (!filterTipe) return true;
+                    const jenisVal = (c.jenis || c.tipe || '').toUpperCase();
+                    return jenisVal === String(filterTipe).toUpperCase();
+                })
+                .sort((a, b) => {
+                    const numA = parseInt(String(a.kode || '').replace(/\D+/g, ''), 10);
+                    const numB = parseInt(String(b.kode || '').replace(/\D+/g, ''), 10);
+                    if (!Number.isNaN(numA) && !Number.isNaN(numB) && numA !== numB) {
+                        return numA - numB;
+                    }
+                    return String(a.kode || '').localeCompare(String(b.kode || ''), 'id', { numeric: true, sensitivity: 'base' });
+                });
+        }
+
+        function escapeHtml(str) {
+            return String(str == null ? '' : str)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function formatRupiah(num) {
+            const val = Number(num) || 0;
+            return 'Rp ' + val.toLocaleString('id-ID');
+        }
+
+        function showToast(message, isError = false) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const el = document.createElement('div');
+            el.className = `px-4 py-3 rounded-xl shadow-lg text-xs font-bold text-white transition transform ${isError ? 'bg-rose-600' : 'bg-emerald-700'}`;
+            el.textContent = message;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 3500);
+        }
+
+        function printElement(elementId) {
+            const target = document.getElementById(elementId);
+            if (!target) return;
+            const origContents = document.body.innerHTML;
+            document.body.innerHTML = target.outerHTML;
+            window.print();
+            document.body.innerHTML = origContents;
+            window.location.reload();
+        }
+
+        // ==========================================
+        // AUTENTIKASI & NAVIGASI UTAMA
+        // ==========================================
+        function handleLogin(event) {
+            event.preventDefault();
+            const usernameInput = document.getElementById('loginUsername')?.value.trim() || '';
+            const passwordInput = document.getElementById('loginPassword')?.value.trim() || '';
+
+            const userList = Array.isArray(state.users) && state.users.length ? state.users : DEFAULT_STATE.users;
+            const found = userList.find(
+                u => String(u.username || '').trim().toLowerCase() === usernameInput.toLowerCase() &&
+                     String(u.password || '').trim() === passwordInput
+            );
+
+            if (!found) {
+                showToast('Username atau kata sandi tidak sesuai!', true);
+                return;
+            }
+
+            currentUser = found;
+            try {
+                localStorage.setItem(SESSION_KEY, JSON.stringify({ username: found.username }));
+            } catch (e) {
+                console.warn('Gagal menyimpan sesi:', e);
+            }
+            enterApp();
+            showToast(`Selamat datang, ${found.name}!`);
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            try {
+                localStorage.removeItem(SESSION_KEY);
+            } catch (e) {
+                console.warn('Gagal menghapus sesi:', e);
+            }
+            document.getElementById('appWrapper').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            const passEl = document.getElementById('loginPassword');
+            if (passEl) passEl.value = '';
+        }
+
+        function sortCoaListByCode(list) {
+            return [...(list || [])].sort((a, b) => {
+                const kodeA = String(a?.kode || '').trim();
+                const kodeB = String(b?.kode || '').trim();
+                const numA = parseInt(kodeA.replace(/\D+/g, ''), 10);
+                const numB = parseInt(kodeB.replace(/\D+/g, ''), 10);
+                if (!Number.isNaN(numA) && !Number.isNaN(numB) && numA !== numB) {
+                    return numA - numB;
+                }
+                return kodeA.localeCompare(kodeB, 'id', { numeric: true, sensitivity: 'base' });
+            });
+        }
+
+        // ==========================================
+        // UTILITAS UMUM, TOAST, MODAL & CETAK
+        // ==========================================
+        // MASTER COA & PENGATURAN SISTEM (ADMIN)
+        // ==========================================
+        function renderCoaTable() {
+            const alokasiSel = document.getElementById('coaAlokasiInput');
+            if (alokasiSel) {
+                alokasiSel.innerHTML = (state.posAlokasi || []).map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+            }
+            const tbody = document.getElementById('coaTableBody');
+            if (!tbody) return;
+            // Urutkan daftar COA berdasarkan kode akun dari yang terkecil ke terbesar
+            const sortedCoa = [...(state.coa || [])].sort((a, b) =>
+                String(a.kode || '').localeCompare(String(b.kode || ''), undefined, { numeric: true, sensitivity: 'base' })
+            );
+            tbody.innerHTML = sortedCoa.map((c) => {
+                const realIdx = (state.coa || []).findIndex(item => item.kode === c.kode && item.nama === c.nama);
+                const jenisVal = c.jenis || c.tipe || 'MASUK';
+                return `
+                <tr>
+                    <td class="py-2 px-3 font-extrabold">${escapeHtml(c.kode)}</td>
+                    <td class="py-2 px-3 font-semibold">${escapeHtml(c.nama)}${c.pembatasan ? `<span class="block text-[10px] text-slate-400">${escapeHtml(c.pembatasan)}</span>` : ''}</td>
+                    <td class="py-2 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${jenisVal === 'MASUK' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${escapeHtml(jenisVal)}</span></td>
+                    <td class="py-2 px-3 text-amber-800 font-semibold">${escapeHtml(c.alokasi || '-')}</td>
+                    <td class="py-2 px-3 text-center">
+                        <button type="button" onclick="deleteCoaItem(${realIdx})" class="px-2 py-1 rounded bg-rose-50 text-rose-700 font-bold text-[11px]">Hapus</button>
+                    </td>
+                </tr>
+            `;
+            }).join('');
+        }
+
+        function handleSaveCoa(e) {
+            e.preventDefault();
+            const kode = document.getElementById('coaKodeInput').value.trim();
+            const nama = document.getElementById('coaNamaInput').value.trim();
+            const jenis = document.getElementById('coaJenisInput').value;
+            const pembatasan = document.getElementById('coaPembatasanInput')?.value || '';
+            const alokasi = document.getElementById('coaAlokasiInput')?.value || '';
+
+            const existingIdx = state.coa.findIndex(c => String(c.kode) === kode);
+            if (existingIdx !== -1) {
+                state.coa[existingIdx] = { kode, nama, jenis, tipe: jenis, pembatasan, alokasi };
+            } else {
+                state.coa.push({ kode, nama, jenis, tipe: jenis, pembatasan, alokasi });
+            }
+            document.getElementById('coaKodeInput').value = '';
+            document.getElementById('coaNamaInput').value = '';
+            saveState();
+            refreshAllViews();
+            showToast('Pos COA berhasil disimpan!');
+        }
+
+        function deleteCoaItem(idx) {
+            if (idx < 0 || idx >= state.coa.length) return;
+            state.coa.splice(idx, 1);
+            saveState();
+            refreshAllViews();
+            showToast('Pos COA dihapus.');
+        }
+
+        function resetDefaultCoa() {
+            state.coa = JSON.parse(JSON.stringify(DEFAULT_COA));
+            saveState();
+            refreshAllViews();
+            showToast('Master COA dikembalikan ke standar pesantren.');
+        }
+
+        function normalizeStateData(raw) {
+            const merged = JSON.parse(JSON.stringify(DEFAULT_STATE));
+            if (!raw || typeof raw !== 'object') return merged;
+            merged.settings = { ...merged.settings, ...(raw.settings || {}) };
+            if (DEFAULT_CLOUD_SERVER_URL && DEFAULT_CLOUD_SERVER_URL.trim()) {
+                merged.settings.gasUrl = DEFAULT_CLOUD_SERVER_URL.trim();
+            }
+            merged.users = Array.isArray(raw.users) && raw.users.length ? raw.users : DEFAULT_STATE.users;
+            merged.wallets = Array.isArray(raw.wallets) && raw.wallets.length ? raw.wallets : DEFAULT_STATE.wallets;
+            merged.alokasiPos = Array.isArray(raw.alokasiPos) && raw.alokasiPos.length ? raw.alokasiPos : DEFAULT_STATE.alokasiPos;
+            merged.duItems = Array.isArray(raw.duItems) && raw.duItems.length ? raw.duItems : DEFAULT_STATE.duItems;
+            merged.coa = Array.isArray(raw.coa) && raw.coa.length ? raw.coa : DEFAULT_COA;
+            merged.santri = Array.isArray(raw.santri) ? raw.santri : [];
+            merged.transaksi = Array.isArray(raw.transaksi) ? raw.transaksi : [];
+            return merged;
+        }
+
+        function saveState(autoPush = true) {
+            state.settings.lastUpdated = Date.now();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            if (autoPush && state.settings.gasUrl) {
+                pushToCloudSilent();
+            }
+        }
+
+        // Fungsi helper untuk mengurutkan daftar COA berdasarkan kode dari yang terkecil ke terbesar
+        function getSortedCoaList(filterTipe = null) {
+            const list = Array.isArray(state.coa) ? [...state.coa] : [];
+            return list
+                .filter(c => {
+                    if (!filterTipe) return true;
+                    const jenisVal = (c.jenis || c.tipe || '').toUpperCase();
+                    return jenisVal === String(filterTipe).toUpperCase();
+                })
+                .sort((a, b) => {
+                    const numA = parseInt(String(a.kode || '').replace(/\D+/g, ''), 10);
+                    const numB = parseInt(String(b.kode || '').replace(/\D+/g, ''), 10);
+                    if (!Number.isNaN(numA) && !Number.isNaN(numB) && numA !== numB) {
+                        return numA - numB;
+                    }
+                    return String(a.kode || '').localeCompare(String(b.kode || ''), 'id', { numeric: true, sensitivity: 'base' });
+                });
+        }
+
+        function escapeHtml(str) {
+            return String(str == null ? '' : str)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function formatRupiah(num) {
+            const val = Number(num) || 0;
+            return 'Rp ' + val.toLocaleString('id-ID');
+        }
+
+        function showToast(message, isError = false) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const el = document.createElement('div');
+            el.className = `px-4 py-3 rounded-xl shadow-lg text-xs font-bold text-white transition transform ${isError ? 'bg-rose-600' : 'bg-emerald-700'}`;
+            el.textContent = message;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 3500);
+        }
+
+        function printElement(elementId) {
+            const target = document.getElementById(elementId);
+            if (!target) return;
+            const origContents = document.body.innerHTML;
+            document.body.innerHTML = target.outerHTML;
+            window.print();
+            document.body.innerHTML = origContents;
+            window.location.reload();
+        }
+
+        // ==========================================
+        // MASTER COA & PENGATURAN SISTEM (ADMIN)
+        // ==========================================
+        function renderCoaTable() {
+            const alokasiSel = document.getElementById('coaAlokasiInput');
+            if (alokasiSel) {
+                alokasiSel.innerHTML = (state.posAlokasi || []).map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+            }
+            const tbody = document.getElementById('coaTableBody');
+            if (!tbody) return;
+            // Urutkan daftar COA berdasarkan nomor kode akun dari yang terkecil ke terbesar
+            const sortedCoa = getSortedCoaList();
+            tbody.innerHTML = sortedCoa.map((c) => {
+                const realIdx = (state.coa || []).findIndex(item => String(item.kode) === String(c.kode) && item.nama === c.nama);
+                const jenisVal = c.jenis || c.tipe || 'MASUK';
+                return `
+                <tr>
+                    <td class="py-2 px-3 font-mono font-extrabold">${escapeHtml(c.kode)}</td>
+                    <td class="py-2 px-3 font-semibold">${escapeHtml(c.nama)}${c.pembatasan ? `<span class="block text-[10px] text-slate-400">${escapeHtml(c.pembatasan)}</span>` : ''}</td>
+                    <td class="py-2 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${jenisVal === 'MASUK' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${escapeHtml(jenisVal)}</span></td>
+                    <td class="py-2 px-3 text-amber-800 font-semibold">${escapeHtml(c.alokasi || '-')}</td>
+                    <td class="py-2 px-3 text-center">
+                        <button type="button" onclick="deleteCoaItem(${realIdx})" class="px-2 py-1 rounded bg-rose-50 text-rose-700 font-bold text-[11px]">Hapus</button>
+                    </td>
+                </tr>
+            `;
+            }).join('');
+        }
+
+        function handleSaveCoa(e) {
+            e.preventDefault();
+            const kode = document.getElementById('coaKodeInput').value.trim();
+            const nama = document.getElementById('coaNamaInput').value.trim();
+            const jenis = document.getElementById('coaJenisInput').value;
+            const pembatasan = document.getElementById('coaPembatasanInput')?.value || '';
+            const alokasi = document.getElementById('coaAlokasiInput')?.value || '';
+
+            const existingIdx = state.coa.findIndex(c => String(c.kode) === kode);
+            if (existingIdx !== -1) {
+                state.coa[existingIdx] = { kode, nama, jenis, tipe: jenis, pembatasan, alokasi };
+            } else {
+                state.coa.push({ kode, nama, jenis, tipe: jenis, pembatasan, alokasi });
+            }
+            state.coa = getSortedCoaList();
+            document.getElementById('coaKodeInput').value = '';
+            document.getElementById('coaNamaInput').value = '';
+            saveState();
+            refreshAllViews();
+            showToast('Pos COA berhasil disimpan & diurutkan sesuai kode akun!');
+        }
+
+        function deleteCoaItem(idx) {
+            if (idx < 0 || idx >= state.coa.length) return;
+            state.coa.splice(idx, 1);
+            state.coa = getSortedCoaList();
+            saveState();
+            refreshAllViews();
+            showToast('Pos COA dihapus.');
+        }
+
+        function resetDefaultCoa() {
+            state.coa = JSON.parse(JSON.stringify(DEFAULT_COA));
+            state.coa = getSortedCoaList();
+            saveState();
+            refreshAllViews();
+            showToast('Master COA dikembalikan ke standar pesantren & diurutkan.');
+        }
+
+        function enterApp() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appWrapper').classList.remove('hidden');
+            document.getElementById('userRoleBadge').textContent = currentUser.role;
+            document.getElementById('userNameDisplay').textContent = currentUser.name;
+            applyBranding();
+            populateGlobalTahunSelect();
+            buildNavigation();
+            initTransactionFormDefaults();
+            refreshAllViews();
+            if (state.settings.gasUrl) {
+                syncFromCloud(false);
+            }
+        }
+
+        function applyBranding() {
+            const s = state.settings;
+            ['loginAppTitle', 'headerAppTitle'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = s.appName;
+            });
+            ['loginAppSubtitle', 'headerAppSubtitle'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = s.appSubtitle;
+            });
+            const recName = document.getElementById('recSchoolName');
+            if (recName) recName.textContent = s.schoolName;
+            if (s.logoUrl) {
+                ['loginLogoImg', 'headerLogoImg'].forEach(id => {
+                    const img = document.getElementById(id);
+                    if (img) { img.src = s.logoUrl; img.classList.remove('hidden'); }
+                });
+                ['loginLogoFallback', 'headerLogoFallback'].forEach(id => {
+                    const fb = document.getElementById(id);
+                    if (fb) fb.classList.add('hidden');
+                });
+            }
+        }
+
+        function buildNavigation() {
+            const isAdmin = currentUser && currentUser.role === 'ADMIN';
+            const menus = [
+                { id: 'dashboard', label: 'Dashboard Ikhtisar', icon: '📊', show: true },
+                { id: 'transaksi', label: 'Input Transaksi', icon: '💳', show: true },
+                { id: 'mutasi', label: 'Buku Kas & Mutasi', icon: '📒', show: true },
+                { id: 'santri', label: 'Data Santri', icon: '🎓', show: true },
+                { id: 'rekap-spp', label: 'Rekap SPP Bulanan', icon: '🗓️', show: true },
+                { id: 'rekap-du', label: 'Rekap Daftar Ulang', icon: '📋', show: true },
+                { id: 'history-santri', label: 'Riwayat Santri', icon: '🗂️', show: true },
+                { id: 'laporan', label: 'Laporan Keuangan', icon: '📑', show: true },
+                { id: 'coa', label: 'Master Akun (COA)', icon: '🏦', show: isAdmin },
+                { id: 'pengaturan', label: 'Pengaturan & AI', icon: '⚙️', show: isAdmin }
+            ].filter(m => m.show);
+
+            const sideNav = document.getElementById('sidebarNavContainer');
+            const mobNav = document.getElementById('mobileNavBar');
+            if (sideNav) {
+                sideNav.innerHTML = menus.map(m => `
+                    <button type="button" data-nav="${m.id}" onclick="switchView('${m.id}')" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 transition text-left">
+                        <span>${m.icon}</span><span>${m.label}</span>
+                    </button>
+                `).join('');
+            }
+            if (mobNav) {
+                mobNav.innerHTML = menus.map(m => `
+                    <button type="button" data-nav="${m.id}" onclick="switchView('${m.id}')" class="nav-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700">
+                        <span>${m.icon}</span><span>${m.label}</span>
+                    </button>
+                `).join('');
+            }
+            const btnPromote = document.getElementById('btnPromoteSantri');
+            if (btnPromote) btnPromote.classList.toggle('hidden', !isAdmin);
+            const btnBulkDel = document.getElementById('btnBulkDeleteSantri');
+            if (btnBulkDel) btnBulkDel.classList.toggle('hidden', !isAdmin);
+            highlightActiveNav('dashboard');
+        }
+
+        function switchView(viewId) {
+            document.querySelectorAll('.app-view').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('view-' + viewId);
+            if (target) target.classList.remove('hidden');
+            highlightActiveNav(viewId);
+            if (viewId === 'laporan') renderLaporanKeuangan();
+            if (viewId === 'coa') renderCoaTable();
+            if (viewId === 'pengaturan') populateSettingsForm();
+        }
+
+        function highlightActiveNav(viewId) {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                const active = btn.getAttribute('data-nav') === viewId;
+                btn.classList.toggle('bg-emerald-700', active);
+                btn.classList.toggle('text-white', active);
+                btn.classList.toggle('text-slate-700', !active);
+            });
+        }
+
+        function toggleMobileDrawer() {
+            const mobNav = document.getElementById('mobileNavBar');
+            if (mobNav) mobNav.classList.toggle('hidden');
+        }
+
+        function togglePreviewMode() {
+            document.body.classList.toggle('mobile-preview-mode');
+            const isMobile = document.body.classList.contains('mobile-preview-mode');
+            document.getElementById('viewModeLabel').textContent = isMobile ? 'Mode Desktop' : 'Mode HP';
+            document.getElementById('viewModeIcon').textContent = isMobile ? '🖥️' : '📱';
+        }
+
+        function populateGlobalTahunSelect() {
+            const sel = document.getElementById('globalTahunSelect');
+            if (!sel) return;
+            const list = state.settings.daftarTahun || ['2026/2027'];
+            sel.innerHTML = list.map(t => `<option value="${escapeHtml(t)}" ${t === state.settings.tahunAktif ? 'selected' : ''}>TA ${escapeHtml(t)}</option>`).join('');
+        }
+
+        function handleChangeTahunPelajaran(val) {
+            state.settings.tahunAktif = val;
+            saveState();
+            refreshAllViews();
+            showToast(`Tahun Pelajaran diubah ke ${val}`);
+        }
+
+        function handleAddTahunPelajaran() {
+            const inp = document.getElementById('newTahunInput');
+            const val = inp.value.trim();
+            if (!val) return;
+            if (!state.settings.daftarTahun.includes(val)) {
+                state.settings.daftarTahun.push(val);
+                state.settings.tahunAktif = val;
+                saveState();
+                populateGlobalTahunSelect();
+                refreshAllViews();
+                inp.value = '';
+                showToast(`Tahun Pelajaran ${val} ditambahkan`);
+            }
+        }
+
+        // ==========================================
+        // REFRESH SEMUA TAMPILAN
+        // ==========================================
+        function refreshAllViews() {
+            populateFilterDropdowns();
+            renderDashboard();
+            renderMutasiTable();
+            renderSantriTable();
+            renderRekapSpp();
+            renderRekapDu();
+            renderLaporanKeuangan();
+            renderCoaTable();
+            populateTrxCoaDropdown();
+        }
+
+        function populateFilterDropdowns() {
+            const kelasList = [...new Set(state.santri.map(s => s.kelas).filter(Boolean))].sort();
+            ['filterSantriKelas', 'filterRekapSppKelas', 'filterRekapDuKelas'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const cur = el.value;
+                el.innerHTML = '<option value="ALL">Semua Kelas</option>' + kelasList.map(k => `<option value="${escapeHtml(k)}">Kelas ${escapeHtml(k)}</option>`).join('');
+                if (kelasList.includes(cur)) el.value = cur;
+            });
+
+            const wSel = document.getElementById('filterMutasiWallet');
+            if (wSel) {
+                const curW = wSel.value;
+                wSel.innerHTML = '<option value="ALL">Semua Dompet Kas/Bank</option>' + state.wallets.map(w => `<option value="${escapeHtml(w.id)}">${escapeHtml(w.nama)}</option>`).join('');
+                wSel.value = curW || 'ALL';
+            }
+        }
+
+        // ==========================================
+        // DASHBOARD IKHTISAR
+        // ==========================================
+        function renderDashboard() {
+            const ta = state.settings.tahunAktif;
+            const trxTa = state.transaksi.filter(t => t.tahunPelajaran === ta);
+            const totalMasuk = trxTa.filter(t => t.jenis === 'MASUK').reduce((s, t) => s + Number(t.nominal || 0), 0);
+            const totalKeluar = trxTa.filter(t => t.jenis === 'KELUAR').reduce((s, t) => s + Number(t.nominal || 0), 0);
+
+            document.getElementById('kpiTotalMasuk').textContent = formatRupiah(totalMasuk);
+            document.getElementById('kpiTotalKeluar').textContent = formatRupiah(totalKeluar);
+
+            // Hitung saldo tiap dompet lintas semua transaksi
+            let grandSaldo = 0;
+            const walletHtml = state.wallets.map(w => {
+                const masukW = state.transaksi.filter(t => t.metode === w.id && t.jenis === 'MASUK').reduce((s, t) => s + Number(t.nominal || 0), 0);
+                const keluarW = state.transaksi.filter(t => t.metode === w.id && t.jenis === 'KELUAR').reduce((s, t) => s + Number(t.nominal || 0), 0);
+                const saldo = (Number(w.saldoAwal) || 0) + masukW - keluarW;
+                grandSaldo += saldo;
+                return `
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                        <span class="font-bold text-slate-700">${escapeHtml(w.nama)}</span>
+                        <span class="font-extrabold text-emerald-800">${formatRupiah(saldo)}</span>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('kpiSaldoTotal').textContent = formatRupiah(grandSaldo);
+            document.getElementById('dashboardWalletList').innerHTML = walletHtml;
+
+            // Sisa Dana per Pos Alokasi
+            const posHtml = state.alokasiPos.map(p => {
+                const masukP = trxTa.filter(t => t.alokasiPos === p.id && t.jenis === 'MASUK').reduce((s, t) => s + Number(t.nominal || 0), 0);
+                const keluarP = trxTa.filter(t => t.alokasiPos === p.id && t.jenis === 'KELUAR').reduce((s, t) => s + Number(t.nominal || 0), 0);
+                const sisa = masukP - keluarP;
+                return `
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                        <div>
+                            <p class="font-bold text-slate-800">${escapeHtml(p.nama)}</p>
+                            <p class="text-[10px] text-slate-500">Masuk: ${formatRupiah(masukP)} • Keluar: ${formatRupiah(keluarP)}</p>
+                        </div>
+                        <span class="font-extrabold ${sisa >= 0 ? 'text-sky-800' : 'text-rose-600'}">${formatRupiah(sisa)}</span>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('dashboardAlokasiList').innerHTML = posHtml;
+
+            // Tunggakan SPP s.d. bulan berjalan
+            const activeSantri = state.santri.filter(s => s.status === 'AKTIF');
+            const elapsedMonths = getElapsedAcademicMonths();
+            let totalTunggakan = 0;
+            activeSantri.forEach(s => {
+                const paidMonths = getPaidSppMonthsForSantri(s.id, ta);
+                const unpaidCount = elapsedMonths.filter(m => !paidMonths.has(m)).length;
+                totalTunggakan += unpaidCount * (Number(s.sppBulanan) || 0);
+            });
+            document.getElementById('kpiTunggakanSpp').textContent = formatRupiah(totalTunggakan);
+            document.getElementById('kpiSantriAktifInfo').textContent = `${activeSantri.length} Santri Aktif`;
+
+            // 5 Transaksi Terakhir
+            const recent = [...trxTa].sort((a, b) => String(b.tanggal).localeCompare(String(a.tanggal))).slice(0, 5);
+            const recentBody = document.getElementById('dashboardRecentTrxBody');
+            if (!recent.length) {
+                recentBody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-400">Belum ada transaksi pada tahun pelajaran ini.</td></tr>';
+            } else {
+                recentBody.innerHTML = recent.map(t => {
+                    const wName = (state.wallets.find(w => w.id === t.metode) || {}).nama || t.metode;
+                    return `
+                        <tr>
+                            <td class="py-2 px-2 text-slate-600">${escapeHtml(t.tanggal)}</td>
+                            <td class="py-2 px-2 font-semibold text-slate-800">${escapeHtml(t.keterangan)}</td>
+                            <td class="py-2 px-2 text-slate-500">${escapeHtml(wName)}</td>
+                            <td class="py-2 px-2 text-right font-extrabold ${t.jenis === 'MASUK' ? 'text-emerald-700' : 'text-rose-600'}">
+                                ${t.jenis === 'MASUK' ? '+' : '-'} ${formatRupiah(t.nominal)}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        function getElapsedAcademicMonths() {
+            const now = new Date();
+            const curMonth = String(now.getMonth() + 1).padStart(2, '0');
+            const idx = BULAN_TAHUN_AJARAN.findIndex(b => b.kode === curMonth);
+            return BULAN_TAHUN_AJARAN.slice(0, idx >= 0 ? idx + 1 : 1).map(b => b.kode);
+        }
+
+        function getPaidSppMonthsForSantri(santriId, tahunPelajaran) {
+            const paid = new Set();
+            state.transaksi.forEach(t => {
+                if (t.santriId === santriId && t.tahunPelajaran === tahunPelajaran && t.kategori === 'SPP' && Array.isArray(t.bulanList)) {
+                    t.bulanList.forEach(b => paid.add(b));
+                }
+            });
+            return paid;
+        }
+
+        // ==========================================
+        // INPUT TRANSAKSI & PENCARIAN SANTRI
+        // ==========================================
+        function initTransactionFormDefaults() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('trxTanggal').value = today;
+            renderSppMonthsCheckboxes();
+            renderDuPosCheckboxes();
+            populateWalletAndPosDropdowns();
+            selectTrxMode('SPP');
+        }
+
+        function populateWalletAndPosDropdowns() {
+            const wSel = document.getElementById('trxMetode');
+            if (wSel) {
+                wSel.innerHTML = (state.wallets || []).map(w => `<option value="${escapeHtml(w.id)}">${escapeHtml(w.nama)}</option>`).join('');
+            }
+            const pSel = document.getElementById('trxAlokasiPos');
+            if (pSel) {
+                pSel.innerHTML = (state.alokasiPos || []).map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.nama)}</option>`).join('');
+            }
+        }
+
+        function renderSppMonthsCheckboxes() {
+            const box = document.getElementById('trxSppMonthsCheckboxes');
+            if (!box) return;
+            box.innerHTML = BULAN_TAHUN_AJARAN.map(b => `
+                <label class="flex items-center gap-1.5 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-emerald-400">
+                    <input type="checkbox" name="sppMonthItem" value="${escapeHtml(b.kode)}" onchange="recalcTransactionAmountAndDesc()" class="rounded text-emerald-600">
+                    <span class="font-semibold text-slate-700">${escapeHtml(b.nama)}</span>
+                </label>
+            `).join('');
+        }
+
+        function selectTrxMode(mode) {
+            document.getElementById('trxKategori').value = mode;
+            const tabSpp = document.getElementById('tabTrxSpp');
+            const tabDu = document.getElementById('tabTrxDu');
+            const tabOps = document.getElementById('tabTrxOps');
+
+            [tabSpp, tabDu, tabOps].forEach(btn => {
+                if (!btn) return;
+                btn.className = 'py-2 px-3 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-white/60 transition';
+            });
+
+            if (mode === 'SPP' && tabSpp) {
+                tabSpp.className = 'py-2 px-3 rounded-xl text-xs font-extrabold bg-emerald-700 text-white shadow-sm transition';
+            } else if (mode === 'DAFTAR_ULANG' && tabDu) {
+                tabDu.className = 'py-2 px-3 rounded-xl text-xs font-extrabold bg-emerald-700 text-white shadow-sm transition';
+            } else if (mode === 'OPERASIONAL' && tabOps) {
+                tabOps.className = 'py-2 px-3 rounded-xl text-xs font-extrabold bg-emerald-700 text-white shadow-sm transition';
+            }
+
+            const santriGroup = document.getElementById('trxSantriFieldGroup');
+            const sppGroup = document.getElementById('trxSppMonthsGroup');
+            const duGroup = document.getElementById('trxDuPosGroup');
+
+            if (santriGroup) santriGroup.classList.toggle('hidden', mode === 'OPERASIONAL');
+            if (sppGroup) sppGroup.classList.toggle('hidden', mode !== 'SPP');
+            if (duGroup) duGroup.classList.toggle('hidden', mode !== 'DAFTAR_ULANG');
+
+            if (mode === 'SPP' || mode === 'DAFTAR_ULANG') {
+                document.getElementById('trxJenis').value = 'MASUK';
+                populateTrxCoaDropdown();
+                const coaEl = document.getElementById('trxCoaKode');
+                const targetCode = mode === 'SPP' ? '4101' : '4102';
+                if (coaEl && [...coaEl.options].some(o => o.value === targetCode)) {
+                    coaEl.value = targetCode;
+                }
+            } else {
+                populateTrxCoaDropdown();
+            }
+            recalcTransactionAmountAndDesc();
+        }
+
+        function onChangeTrxJenis() {
+            populateTrxCoaDropdown();
+            recalcTransactionAmountAndDesc();
+        }
+
+        function onChangeTrxCoa() {
+            recalcTransactionAmountAndDesc();
+        }
+
+        function toggleAllSppMonths() {
+            const items = document.querySelectorAll('input[name="sppMonthItem"]');
+            const anyUnchecked = Array.from(items).some(i => !i.checked);
+            items.forEach(i => { i.checked = anyUnchecked; });
+            recalcTransactionAmountAndDesc();
+        }
+
+        function renderDuPosCheckboxes() {
+            const box = document.getElementById('trxDuPosCheckboxes');
+            if (!box) return;
+            box.innerHTML = state.duItems.map(item => `
+                <label class="flex items-center justify-between gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-emerald-400">
+                    <span class="flex items-center gap-1.5 font-semibold text-slate-700">
+                        <input type="checkbox" name="duPosItem" value="${escapeHtml(item.id)}" data-nominal="${item.nominal}" data-nama="${escapeHtml(item.nama)}" onchange="recalcTransactionAmountAndDesc()" class="rounded text-emerald-600">
+                        <span>${escapeHtml(item.nama)}</span>
+                    </span>
+                    <span class="text-[11px] font-bold text-emerald-700">${formatRupiah(item.nominal)}</span>
+                </label>
+            `).join('');
+        }
+
+        function toggleAllDuPos() {
+            const items = document.querySelectorAll('input[name="duPosItem"]');
+            const anyUnchecked = Array.from(items).some(i => !i.checked);
+            items.forEach(i => i.checked = anyUnchecked);
+            recalcTransactionAmountAndDesc();
+        }
+
+        function handleSearchTrxSantri(keyword) {
+            const box = document.getElementById('trxSantriSuggestions');
+            const q = keyword.trim().toLowerCase();
+            if (q.length < 3) {
+                box.classList.add('hidden');
+                box.innerHTML = '';
+                return;
+            }
+            const matches = state.santri.filter(s =>
+                s.nama.toLowerCase().includes(q) || String(s.nis).toLowerCase().includes(q)
+            ).slice(0, 10);
+
+            if (!matches.length) {
+                box.innerHTML = '<div class="p-3 text-slate-400">Santri tidak ditemukan.</div>';
+            } else {
+                box.innerHTML = matches.map(s => `
+                    <button type="button" onclick="selectTrxSantri('${escapeHtml(s.id)}')" class="w-full text-left px-3.5 py-2.5 hover:bg-emerald-50 flex items-center justify-between">
+                        <div>
+                            <p class="font-bold text-slate-800">${escapeHtml(s.nama)}</p>
+                            <p class="text-[11px] text-slate-500">NIS: ${escapeHtml(s.nis)} • Kelas ${escapeHtml(s.kelas)} (${escapeHtml(s.status)})</p>
+                        </div>
+                        <span class="text-[11px] font-bold text-emerald-700">Pilih</span>
+                    </button>
+                `).join('');
+            }
+            box.classList.remove('hidden');
+        }
+
+        function selectTrxSantri(santriId) {
+            const santri = state.santri.find(s => s.id === santriId);
+            if (!santri) return;
+            document.getElementById('trxSantriId').value = santri.id;
+            document.getElementById('trxSantriSearchInput').value = `${santri.nama} (${santri.nis})`;
+            document.getElementById('trxSantriSuggestions').classList.add('hidden');
+
+            const badge = document.getElementById('trxSelectedSantriBadge');
+            badge.textContent = `Santri Terpilih: ${santri.nama} • Kelas ${santri.kelas} • Tarif SPP: ${formatRupiah(santri.sppBulanan)}/bln`;
+            badge.classList.remove('hidden');
+
+            // Tampilkan riwayat bulan terbayar agar tidak salah input ganda
+            const ta = state.settings.tahunAktif;
+            const paidSet = getPaidSppMonthsForSantri(santri.id, ta);
+            const paidNames = BULAN_TAHUN_AJARAN.filter(b => paidSet.has(b.kode)).map(b => b.nama);
+            const hint = document.getElementById('trxSantriPaidHint');
+            hint.textContent = paidNames.length
+                ? `Info TA ${ta}: SPP sudah lunas bulan ${paidNames.join(', ')}.`
+                : `Info TA ${ta}: Belum ada pembayaran SPP tercatat.`;
+            hint.classList.remove('hidden');
+
+            recalcTransactionAmountAndDesc();
+        }
+
+        function recalcTransactionAmountAndDesc() {
+            const mode = document.getElementById('trxKategori').value;
+            const santriId = document.getElementById('trxSantriId').value;
+            const santri = state.santri.find(s => s.id === santriId);
+            const nomEl = document.getElementById('trxNominal');
+            const ketEl = document.getElementById('trxKeterangan');
+
+            if (mode === 'SPP') {
+                const checked = Array.from(document.querySelectorAll('input[name="sppMonthItem"]:checked')).map(i => i.value);
+                const monthNames = checked.map(code => NAMA_BULAN_MAP[code] || code);
+                if (santri) {
+                    nomEl.value = checked.length * (Number(santri.sppBulanan) || 0);
+                    ketEl.value = `Pembayaran SPP ${santri.nama} (${santri.kelas}) Bulan: ${monthNames.join(', ') || '-'}`;
+                }
+            } else if (mode === 'DAFTAR_ULANG') {
+                const checked = Array.from(document.querySelectorAll('input[name="duPosItem"]:checked'));
+                const totalDu = checked.reduce((sum, el) => sum + (Number(el.dataset.nominal) || 0), 0);
+                const itemNames = checked.map(el => el.dataset.nama);
+                if (santri) {
+                    nomEl.value = totalDu || Number(santri.targetDu) || 0;
+                    ketEl.value = `Pembayaran Daftar Ulang ${santri.nama} (${santri.kelas})${itemNames.length ? ' - ' + itemNames.join(', ') : ''}`;
+                }
+            }
+        }
+
+        function handleSaveTransaksi(e) {
+            e.preventDefault();
+            const editId = document.getElementById('trxEditId').value;
+            const mode = document.getElementById('trxKategori').value;
+            const santriId = document.getElementById('trxSantriId').value;
+            if ((mode === 'SPP' || mode === 'DAFTAR_ULANG') && !santriId) {
+                showToast('Silakan ketik minimal 3 huruf dan pilih santri terlebih dahulu!', true);
+                return;
+            }
+            const bulanList = mode === 'SPP'
+                ? Array.from(document.querySelectorAll('input[name="sppMonthItem"]:checked')).map(i => i.value)
+                : [];
+            if (mode === 'SPP' && !bulanList.length) {
+                showToast('Pilih minimal 1 bulan pembayaran SPP!', true);
+                return;
+            }
+
+            const trxData = {
+                id: editId || ('TRX_' + Date.now()),
+                tahunPelajaran: state.settings.tahunAktif,
+                tanggal: document.getElementById('trxTanggal').value,
+                jenis: document.getElementById('trxJenis').value,
+                kategori: mode,
+                santriId: mode === 'OPERASIONAL' ? '' : santriId,
+                bulanList: bulanList,
+                coaKode: document.getElementById('trxCoaKode').value,
+                metode: document.getElementById('trxMetode').value,
+                alokasiPos: document.getElementById('trxAlokasiPos').value,
+                nominal: Number(document.getElementById('trxNominal').value) || 0,
+                keterangan: document.getElementById('trxKeterangan').value.trim()
+            };
+
+            if (editId) {
+                const idx = state.transaksi.findIndex(t => t.id === editId);
+                if (idx >= 0) state.transaksi[idx] = trxData;
+                cancelEditTransaksi();
+                showToast('Perubahan transaksi berhasil disimpan!');
+            } else {
+                state.transaksi.push(trxData);
+                showToast('Transaksi berhasil disimpan!');
+                openReceiptModal(trxData);
+            }
+
+            saveState();
+            refreshAllViews();
+            resetTransaksiInputs();
+        }
+
+        function resetTransaksiInputs() {
+            document.getElementById('trxEditId').value = '';
+            document.getElementById('trxNominal').value = '';
+            document.getElementById('trxKeterangan').value = '';
+            document.querySelectorAll('input[name="sppMonthItem"], input[name="duPosItem"]').forEach(cb => cb.checked = false);
+        }
+
+        function editTransaksi(trxId) {
+            const trx = state.transaksi.find(t => t.id === trxId);
+            if (!trx) return;
+            switchView('transaksi');
+            selectTrxMode(trx.kategori || 'OPERASIONAL');
+            document.getElementById('trxEditId').value = trx.id;
+            document.getElementById('trxTanggal').value = trx.tanggal;
+            document.getElementById('trxJenis').value = trx.jenis;
+            populateTrxCoaDropdown();
+            document.getElementById('trxCoaKode').value = trx.coaKode;
+            document.getElementById('trxMetode').value = trx.metode;
+            document.getElementById('trxAlokasiPos').value = trx.alokasiPos;
+            if (trx.santriId) selectTrxSantri(trx.santriId);
+            if (Array.isArray(trx.bulanList)) {
+                document.querySelectorAll('input[name="sppMonthItem"]').forEach(cb => {
+                    cb.checked = trx.bulanList.includes(cb.value);
+                });
+            }
+            document.getElementById('trxNominal').value = trx.nominal;
+            document.getElementById('trxKeterangan').value = trx.keterangan;
+            document.getElementById('trxSubmitBtn').textContent = 'Simpan Perubahan Transaksi';
+            document.getElementById('trxCancelEditBtn').classList.remove('hidden');
+        }
+
+        function cancelEditTransaksi() {
+            document.getElementById('trxEditId').value = '';
+            document.getElementById('trxSubmitBtn').textContent = 'Simpan Transaksi & Cetak Kuitansi';
+            document.getElementById('trxCancelEditBtn').classList.add('hidden');
+            resetTransaksiInputs();
+        }
+
+        function deleteTransaksi(trxId) {
+            state.transaksi = state.transaksi.filter(t => t.id !== trxId);
+            saveState();
+            refreshAllViews();
+            showToast('Transaksi telah dihapus.');
+        }
+
+        function openReceiptModal(trx) {
+            const santri = state.santri.find(s => s.id === trx.santriId);
+            const wName = (state.wallets.find(w => w.id === trx.metode) || {}).nama || trx.metode;
+            document.getElementById('recSchoolName').textContent = state.settings.schoolName;
+            document.getElementById('recDatePlace').textContent = `Tanggal: ${trx.tanggal}`;
+            document.getElementById('receiptDetailContent').innerHTML = `
+                <div class="flex justify-between"><span class="text-slate-500">No. Bukti:</span><span class="font-mono font-bold">${escapeHtml(trx.id)}</span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Tahun Pelajaran:</span><span class="font-bold">${escapeHtml(trx.tahunPelajaran)}</span></div>
+                ${santri ? `<div class="flex justify-between"><span class="text-slate-500">Nama Santri:</span><span class="font-bold">${escapeHtml(santri.nama)} (${escapeHtml(santri.kelas)})</span></div>` : ''}
+                <div class="flex justify-between"><span class="text-slate-500">Dompet:</span><span>${escapeHtml(wName)}</span></div>
+                <div class="pt-1"><span class="text-slate-500 block">Uraian:</span><span class="font-semibold">${escapeHtml(trx.keterangan)}</span></div>
+                <div class="pt-2 border-t border-slate-200 flex justify-between text-sm font-extrabold text-emerald-800">
+                    <span>NOMINAL:</span><span>${formatRupiah(trx.nominal)}</span>
+                </div>
+            `;
+            document.getElementById('receiptModal').classList.remove('hidden');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receiptModal').classList.add('hidden');
+        }
+
+        // ==========================================
+        // BUKU KAS UMUM & RIWAYAT MUTASI
+        // ==========================================
+        function renderMutasiTable() {
+            const ta = state.settings.tahunAktif;
+            const q = (document.getElementById('filterMutasiSearch')?.value || '').trim().toLowerCase();
+            const jenis = document.getElementById('filterMutasiJenis')?.value || 'ALL';
+            const bulan = document.getElementById('filterMutasiBulan')?.value || 'ALL';
+            const wallet = document.getElementById('filterMutasiWallet')?.value || 'ALL';
+            const isAdmin = currentUser && currentUser.role === 'ADMIN';
+
+            const filtered = state.transaksi.filter(t => {
+                if (t.tahunPelajaran !== ta) return false;
+                if (jenis !== 'ALL' && t.jenis !== jenis) return false;
+                if (bulan !== 'ALL' && String(t.tanggal).slice(5, 7) !== bulan) return false;
+                if (wallet !== 'ALL' && t.metode !== wallet) return false;
+                if (q && !String(t.keterangan).toLowerCase().includes(q)) return false;
+                return true;
+            }).sort((a, b) => String(b.tanggal).localeCompare(String(a.tanggal)));
+
+            document.getElementById('mutasiCountBadge').textContent = `Jumlah Data: ${filtered.length}`;
+            const tbody = document.getElementById('mutasiTableBody');
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="py-5 text-center text-slate-400">Tidak ada data mutasi yang sesuai filter.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = filtered.map((t, idx) => {
+                const coaObj = state.coa.find(c => c.kode === t.coaKode);
+                const wName = (state.wallets.find(w => w.id === t.metode) || {}).nama || t.metode;
+                const posName = (state.alokasiPos.find(p => p.id === t.alokasiPos) || {}).nama || '';
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-2 px-2 text-center font-semibold text-slate-500">${idx + 1}</td>
+                        <td class="py-2 px-2 whitespace-nowrap">${escapeHtml(t.tanggal)}</td>
+                        <td class="py-2 px-2">
+                            <span class="font-mono font-bold text-slate-700">${escapeHtml(t.coaKode)}</span>
+                            <span class="block text-[10px] text-slate-500">${escapeHtml(coaObj ? coaObj.nama : t.kategori)}</span>
+                        </td>
+                        <td class="py-2 px-2 font-medium text-slate-800">${escapeHtml(t.keterangan)}</td>
+                        <td class="py-2 px-2 text-[11px] text-slate-600">${escapeHtml(wName)}<span class="block text-[10px] text-slate-400">${escapeHtml(posName)}</span></td>
+                        <td class="py-2 px-2 text-right font-bold text-emerald-700">${t.jenis === 'MASUK' ? formatRupiah(t.nominal) : '-'}</td>
+                        <td class="py-2 px-2 text-right font-bold text-rose-600">${t.jenis === 'KELUAR' ? formatRupiah(t.nominal) : '-'}</td>
+                        <td class="py-2 px-2 text-center whitespace-nowrap no-print space-x-1">
+                            <button type="button" onclick='openReceiptModal(${JSON.stringify(t).replace(/'/g, "&#39;")})' title="Cetak Kuitansi" class="px-1.5 py-1 rounded bg-slate-100 hover:bg-slate-200">🧾</button>
+                            ${isAdmin ? `<button type="button" onclick="editTransaksi('${escapeHtml(t.id)}')" title="Edit" class="px-1.5 py-1 rounded bg-amber-100 hover:bg-amber-200">✏️</button>` : ''}
+                            ${isAdmin ? `<button type="button" onclick="deleteTransaksi('${escapeHtml(t.id)}')" title="Hapus" class="px-1.5 py-1 rounded bg-rose-100 hover:bg-rose-200">🗑️</button>` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ==========================================
+        // DATA SANTRI & KENAIKAN KELAS MASSAL
+        // ==========================================
+        function renderSantriTable() {
+            const q = (document.getElementById('filterSantriSearch')?.value || '').trim().toLowerCase();
+            const kls = document.getElementById('filterSantriKelas')?.value || 'ALL';
+            const st = document.getElementById('filterSantriStatus')?.value || 'AKTIF';
+
+            const filtered = state.santri.filter(s => {
+                if (kls !== 'ALL' && s.kelas !== kls) return false;
+                if (st !== 'ALL' && s.status !== st) return false;
+                if (q && !s.nama.toLowerCase().includes(q) && !String(s.nis).toLowerCase().includes(q)) return false;
+                return true;
+            });
+
+            document.getElementById('santriCountBadge').textContent = `Jumlah Data: ${filtered.length}`;
+            const tbody = document.getElementById('santriTableBody');
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr><td colspan="9" class="py-5 text-center text-slate-400">Tidak ada data santri.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = filtered.map((s, idx) => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-2 px-2 text-center">
+                        <input type="checkbox" class="santri-row-cb rounded" value="${escapeHtml(s.id)}" ${selectedSantriIds.has(s.id) ? 'checked' : ''} onchange="toggleSantriSelection('${escapeHtml(s.id)}', this.checked)">
+                    </td>
+                    <td class="py-2 px-2 text-center font-semibold text-slate-500">${idx + 1}</td>
+                    <td class="py-2 px-2 font-mono font-bold text-slate-700">${escapeHtml(s.nis)}</td>
+                    <td class="py-2 px-2 font-bold text-slate-800">${escapeHtml(s.nama)}</td>
+                    <td class="py-2 px-2"><span class="px-2 py-0.5 rounded bg-slate-100 font-bold text-slate-700">${escapeHtml(s.kelas)}</span></td>
+                    <td class="py-2 px-2 text-right font-semibold">${formatRupiah(s.sppBulanan)}</td>
+                    <td class="py-2 px-2 text-right font-semibold">${formatRupiah(s.targetDu)}</td>
+                    <td class="py-2 px-2 text-center">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${s.status === 'AKTIF' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}">${escapeHtml(s.status)}</span>
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                        <button type="button" onclick="openSantriModal('${escapeHtml(s.id)}')" class="text-sky-700 hover:underline font-bold">Edit</button>
+                    </td>
+                </tr>
+            `).join('');
+            updateSantriBulkBar();
+        }
+
+        function toggleSantriSelection(id, checked) {
+            if (checked) selectedSantriIds.add(id);
+            else selectedSantriIds.delete(id);
+            updateSantriBulkBar();
+        }
+
+        function toggleSelectAllSantri(checked) {
+            document.querySelectorAll('.santri-row-cb').forEach(cb => {
+                cb.checked = checked;
+                if (checked) selectedSantriIds.add(cb.value);
+                else selectedSantriIds.delete(cb.value);
+            });
+            updateSantriBulkBar();
+        }
+
+        function updateSantriBulkBar() {
+            const bar = document.getElementById('santriBulkActionBar');
+            const count = selectedSantriIds.size;
+            bar.classList.toggle('hidden', count === 0);
+            document.getElementById('santriSelectedCountText').textContent = `${count} santri dipilih`;
+        }
+
+        function applyBulkEditSantri() {
+            const newKelas = document.getElementById('bulkEditKelasInput').value.trim();
+            const newStatus = document.getElementById('bulkEditStatusSelect').value;
+            state.santri.forEach(s => {
+                if (selectedSantriIds.has(s.id)) {
+                    if (newKelas) s.kelas = newKelas;
+                    if (newStatus) s.status = newStatus;
+                }
+            });
+            selectedSantriIds.clear();
+            saveState();
+            refreshAllViews();
+            showToast('Perubahan massal santri berhasil diterapkan!');
+        }
+
+        function applyBulkDeleteSantri() {
+            state.santri = state.santri.filter(s => !selectedSantriIds.has(s.id));
+            selectedSantriIds.clear();
+            saveState();
+            refreshAllViews();
+            showToast('Santri terpilih telah dihapus.');
+        }
+
+        function promoteActiveSantriYear() {
+            state.santri.forEach(s => {
+                if (s.status !== 'AKTIF') return;
+                const match = String(s.kelas).match(/^(\d+)(.*)$/);
+                if (match) {
+                    const num = parseInt(match[1], 10);
+                    const suffix = match[2] || '';
+                    if (num === 9 || num === 12) {
+                        s.status = 'LULUS';
+                    } else {
+                        s.kelas = `${num + 1}${suffix}`;
+                    }
+                }
+            });
+            saveState();
+            refreshAllViews();
+            showToast('Proses kenaikan kelas & kelulusan massal selesai!');
+        }
+
+        function openSantriModal(santriId = '') {
+            const modal = document.getElementById('santriModal');
+            if (santriId) {
+                const s = state.santri.find(item => item.id === santriId);
+                if (!s) return;
+                document.getElementById('santriModalTitle').textContent = 'Edit Data Santri';
+                document.getElementById('editSantriId').value = s.id;
+                document.getElementById('formSantriNis').value = s.nis;
+                document.getElementById('formSantriNama').value = s.nama;
+                document.getElementById('formSantriKelas').value = s.kelas;
+                document.getElementById('formSantriSpp').value = s.sppBulanan;
+                document.getElementById('formSantriDu').value = s.targetDu;
+                document.getElementById('formSantriStatus').value = s.status;
+            } else {
+                document.getElementById('santriModalTitle').textContent = 'Tambah Data Santri';
+                document.getElementById('editSantriId').value = '';
+                document.getElementById('formSantriNis').value = '';
+                document.getElementById('formSantriNama').value = '';
+                document.getElementById('formSantriKelas').value = '';
+                document.getElementById('formSantriSpp').value = 350000;
+                document.getElementById('formSantriDu').value = 1500000;
+                document.getElementById('formSantriStatus').value = 'AKTIF';
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeSantriModal() {
+            document.getElementById('santriModal').classList.add('hidden');
+        }
+
+        function handleSaveSantri(e) {
+            e.preventDefault();
+            const id = document.getElementById('editSantriId').value;
+            const payload = {
+                id: id || ('S_' + Date.now()),
+                nis: document.getElementById('formSantriNis').value.trim(),
+                nama: document.getElementById('formSantriNama').value.trim(),
+                kelas: document.getElementById('formSantriKelas').value.trim(),
+                sppBulanan: Number(document.getElementById('formSantriSpp').value) || 0,
+                targetDu: Number(document.getElementById('formSantriDu').value) || 0,
+                status: document.getElementById('formSantriStatus').value
+            };
+            if (id) {
+                const idx = state.santri.findIndex(s => s.id === id);
+                if (idx >= 0) state.santri[idx] = payload;
+            } else {
+                state.santri.push(payload);
+            }
+            closeSantriModal();
+            saveState();
+            refreshAllViews();
+            showToast('Data santri berhasil disimpan!');
+        }
+
+        // ==========================================
+        // REKAP SPP & DAFTAR ULANG
+        // ==========================================
+        function renderRekapSpp() {
+            const ta = state.settings.tahunAktif;
+            const q = (document.getElementById('filterRekapSppSearch')?.value || '').trim().toLowerCase();
+            const kls = document.getElementById('filterRekapSppKelas')?.value || 'ALL';
+            const st = document.getElementById('filterRekapSppStatus')?.value || 'ALL';
+            const elapsed = getElapsedAcademicMonths();
+
+            const rows = state.santri.filter(s => s.status === 'AKTIF').map(s => {
+                const paidSet = getPaidSppMonthsForSantri(s.id, ta);
+                const terbayar = paidSet.size * (Number(s.sppBulanan) || 0);
+                const unpaidCount = elapsed.filter(m => !paidSet.has(m)).length;
+                const tunggakan = unpaidCount * (Number(s.sppBulanan) || 0);
+                return { santri: s, paidSet, terbayar, tunggakan };
+            }).filter(item => {
+                if (kls !== 'ALL' && item.santri.kelas !== kls) return false;
+                if (q && !item.santri.nama.toLowerCase().includes(q) && !String(item.santri.nis).toLowerCase().includes(q)) return false;
+                if (st === 'MENUNGGAK' && item.tunggakan <= 0) return false;
+                if (st === 'LUNAS' && item.tunggakan > 0) return false;
+                return true;
+            });
+
+            document.getElementById('rekapSppCountBadge').textContent = `Jumlah Data: ${rows.length}`;
+            const tbody = document.getElementById('rekapSppTableBody');
+            if (!rows.length) {
+                tbody.innerHTML = '<tr><td colspan="17" class="py-5 text-center text-slate-400">Tidak ada data rekap SPP.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = rows.map((r, idx) => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-1.5 px-1.5 text-center font-semibold text-slate-500">${idx + 1}</td>
+                    <td class="py-1.5 px-1.5 font-bold text-slate-800 whitespace-nowrap">${escapeHtml(r.santri.nama)}</td>
+                    <td class="py-1.5 px-1.5 text-slate-600">${escapeHtml(r.santri.kelas)}</td>
+                    ${BULAN_TAHUN_AJARAN.map(b => {
+                        const isPaid = r.paidSet.has(b.kode);
+                        return `<td class="py-1.5 px-1 text-center">${isPaid ? '<span class="text-emerald-600 font-extrabold">✓</span>' : '<span class="text-slate-300">-</span>'}</td>`;
+                    }).join('')}
+                    <td class="py-1.5 px-2 text-right font-bold text-emerald-700">${formatRupiah(r.terbayar)}</td>
+                    <td class="py-1.5 px-2 text-right font-bold ${r.tunggakan > 0 ? 'text-rose-600' : 'text-slate-400'}">${formatRupiah(r.tunggakan)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderRekapDu() {
+            const ta = state.settings.tahunAktif;
+            const q = (document.getElementById('filterRekapDuSearch')?.value || '').trim().toLowerCase();
+            const kls = document.getElementById('filterRekapDuKelas')?.value || 'ALL';
+
+            const rows = state.santri.filter(s => s.status === 'AKTIF').filter(s => {
+                if (kls !== 'ALL' && s.kelas !== kls) return false;
+                if (q && !s.nama.toLowerCase().includes(q) && !String(s.nis).toLowerCase().includes(q)) return false;
+                return true;
+            }).map(s => {
+                const dibayar = state.transaksi
+                    .filter(t => t.santriId === s.id && t.tahunPelajaran === ta && t.kategori === 'DAFTAR_ULANG')
+                    .reduce((sum, t) => sum + (Number(t.nominal) || 0), 0);
+                const target = Number(s.targetDu) || 0;
+                const sisa = Math.max(0, target - dibayar);
+                return { santri: s, target, dibayar, sisa };
+            });
+
+            document.getElementById('rekapDuCountBadge').textContent = `Jumlah Data: ${rows.length}`;
+            const tbody = document.getElementById('rekapDuTableBody');
+            if (!rows.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="py-5 text-center text-slate-400">Tidak ada data daftar ulang.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = rows.map((r, idx) => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-2 px-2 text-center font-semibold text-slate-500">${idx + 1}</td>
+                    <td class="py-2 px-2 font-mono text-slate-700">${escapeHtml(r.santri.nis)}</td>
+                    <td class="py-2 px-2 font-bold text-slate-800">${escapeHtml(r.santri.nama)}</td>
+                    <td class="py-2 px-2">${escapeHtml(r.santri.kelas)}</td>
+                    <td class="py-2 px-2 text-right">${formatRupiah(r.target)}</td>
+                    <td class="py-2 px-2 text-right font-bold text-emerald-700">${formatRupiah(r.dibayar)}</td>
+                    <td class="py-2 px-2 text-right font-bold ${r.sisa > 0 ? 'text-rose-600' : 'text-slate-400'}">${formatRupiah(r.sisa)}</td>
+                    <td class="py-2 px-2 text-center">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${r.sisa === 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                            ${r.sisa === 0 ? 'LUNAS' : 'BELUM LUNAS'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // ==========================================
+        // RIWAYAT SANTRI LINTAS TAHUN
+        // ==========================================
+        function handleSearchHistorySantri(keyword) {
+            const box = document.getElementById('historySantriResults');
+            const q = keyword.trim().toLowerCase();
+            if (!q) { box.classList.add('hidden'); return; }
+            const matches = state.santri.filter(s => s.nama.toLowerCase().includes(q) || String(s.nis).toLowerCase().includes(q)).slice(0, 10);
+            box.innerHTML = matches.map(s => `
+                <button type="button" onclick="showSantriHistoryDetail('${escapeHtml(s.id)}')" class="w-full text-left px-3.5 py-2.5 hover:bg-emerald-50 flex justify-between">
+                    <span class="font-bold text-slate-800">${escapeHtml(s.nama)} (${escapeHtml(s.nis)})</span>
+                    <span class="text-slate-500">Kelas ${escapeHtml(s.kelas)}</span>
+                </button>
+            `).join('');
+            box.classList.remove('hidden');
+        }
+
+        function showSantriHistoryDetail(santriId) {
+            const s = state.santri.find(item => item.id === santriId);
+            if (!s) return;
+            document.getElementById('historySantriResults').classList.add('hidden');
+            document.getElementById('histSantriName').textContent = `${s.nama} (NIS: ${s.nis})`;
+            document.getElementById('histSantriMeta').textContent = `Kelas: ${s.kelas} • Status: ${s.status}`;
+            const allTrx = state.transaksi.filter(t => t.santriId === s.id).sort((a, b) => String(b.tanggal).localeCompare(String(a.tanggal)));
+            const timeline = document.getElementById('histSantriTimeline');
+            if (!allTrx.length) {
+                timeline.innerHTML = '<p class="text-xs text-slate-400">Belum ada riwayat pembayaran santri ini.</p>';
+            } else {
+                timeline.innerHTML = `
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-200 bg-slate-50 text-slate-600">
+                                <th class="py-2 px-2">TA</th>
+                                <th class="py-2 px-2">Tanggal</th>
+                                <th class="py-2 px-2">Uraian Pembayaran</th>
+                                <th class="py-2 px-2 text-right">Nominal</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${allTrx.map(t => `
+                                <tr>
+                                    <td class="py-2 px-2 font-bold">${escapeHtml(t.tahunPelajaran)}</td>
+                                    <td class="py-2 px-2">${escapeHtml(t.tanggal)}</td>
+                                    <td class="py-2 px-2">${escapeHtml(t.keterangan)}</td>
+                                    <td class="py-2 px-2 text-right font-bold text-emerald-700">${formatRupiah(t.nominal)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+            document.getElementById('historySantriDetailCard').classList.remove('hidden');
+        }
+
+        // ==========================================
+        // LAPORAN KEUANGAN (URUT COA TERKECIL & NAMA BULAN HURUF)
+        // ==========================================
+        function renderLaporanKeuangan() {
+            const s = state.settings;
+            const ta = s.tahunAktif;
+            const bulanKode = document.getElementById('filterLaporanBulan')?.value || 'ALL';
+            const periodeLabel = bulanKode === 'ALL'
+                ? 'Seluruh Tahun Pelajaran'
+                : `Periode Bulan ${NAMA_BULAN_MAP[bulanKode] || bulanKode}`;
+
+            document.getElementById('lapKopTitle').textContent = s.schoolName;
+            document.getElementById('lapKopAddress').textContent = s.schoolAddress;
+            document.getElementById('lapPeriodeSubtitle').textContent = `Tahun Pelajaran ${ta} • ${periodeLabel}`;
+            document.getElementById('lapTtdMudir').textContent = s.mudirName;
+            document.getElementById('lapTtdBendahara').textContent = s.bendaharaName;
+            document.getElementById('lapTempatTanggal').textContent = s.printPlaceDate;
+
+            const trxFiltered = state.transaksi.filter(t => {
+                if (t.tahunPelajaran !== ta) return false;
+                if (bulanKode !== 'ALL' && String(t.tanggal).slice(5, 7) !== bulanKode) return false;
+                return true;
+            });
+
+            const masukCoa = sortCoaListByCode((state.coa || []).filter(c => c.jenis === 'MASUK'));
+            const keluarCoa = sortCoaListByCode((state.coa || []).filter(c => c.jenis === 'KELUAR'));
+            const coaMasuk = getSortedCoaList('MASUK');
+            let totalMasuk = 0;
+            const masukRows = coaMasuk.map(c => {
+                const sum = trxFiltered.filter(t => t.jenis === 'MASUK' && t.coaKode === c.kode).reduce((acc, t) => acc + (Number(t.nominal) || 0), 0);
+                totalMasuk += sum;
+                return `<tr><td class="py-1.5 px-2"><span class="font-mono text-slate-500 mr-1.5">${escapeHtml(c.kode)}</span>${escapeHtml(c.nama)}</td><td class="py-1.5 px-2 text-right font-semibold">${formatRupiah(sum)}</td></tr>`;
+            }).join('');
+
+            const coaKeluar = getSortedCoaList('KELUAR');
+            let totalKeluar = 0;
+            const keluarRows = coaKeluar.map(c => {
+                const sum = trxFiltered.filter(t => t.jenis === 'KELUAR' && t.coaKode === c.kode).reduce((acc, t) => acc + (Number(t.nominal) || 0), 0);
+                totalKeluar += sum;
+                return `<tr><td class="py-1.5 px-2"><span class="font-mono text-slate-500 mr-1.5">${escapeHtml(c.kode)}</span>${escapeHtml(c.nama)}</td><td class="py-1.5 px-2 text-right font-semibold">${formatRupiah(sum)}</td></tr>`;
+            }).join('');
+
+            document.getElementById('lapPenerimaanBody').innerHTML = masukRows;
+            document.getElementById('lapPengeluaranBody').innerHTML = keluarRows;
+            document.getElementById('lapTotalMasuk').textContent = formatRupiah(totalMasuk);
+            document.getElementById('lapTotalKeluar').textContent = formatRupiah(totalKeluar);
+            document.getElementById('lapSurplusDefisit').textContent = formatRupiah(totalMasuk - totalKeluar);
+        }
+
+        // ==========================================
+        // MASTER COA (URUT DARI KODE TERKECIL)
+        // ==========================================
+        function renderCoaTable() {
+            const tbody = document.getElementById('coaTableBody');
+            if (!tbody) return;
+            const sortedCoa = getSortedCoaList();
+            tbody.innerHTML = sortedCoa.length
+                ? sortedCoa.map(c => {
+                    const jenisVal = (c.jenis || c.tipe || 'MASUK').toUpperCase();
+                    return `
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-2 px-2 font-mono font-extrabold text-slate-800">${escapeHtml(c.kode)}</td>
+                            <td class="py-2 px-2 font-semibold text-slate-800">${escapeHtml(c.nama)}</td>
+                            <td class="py-2 px-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${jenisVal === 'MASUK' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                                    ${jenisVal === 'MASUK' ? 'Penerimaan (MASUK)' : 'Pengeluaran (KELUAR)'}
+                                </span>
+                            </td>
+                            <td class="py-2 px-2 text-center">
+                                <button type="button" onclick="deleteCoa('${escapeHtml(c.kode)}')" class="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px]">Hapus</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('')
+                : '<tr><td colspan="4" class="py-5 text-center text-slate-400">Belum ada akun COA.</td></tr>';
+        }
+
+        function populateTrxCoaDropdown() {
+            const jenisEl = document.getElementById('trxJenis');
+            const coaSelect = document.getElementById('trxCoaKode');
+            if (!jenisEl || !coaSelect) return;
+            const currentVal = coaSelect.value;
+            const sortedCoa = getSortedCoaList(jenisEl.value);
+            coaSelect.innerHTML = sortedCoa.map(c => `
+                <option value="${escapeHtml(c.kode)}">${escapeHtml(c.kode)} - ${escapeHtml(c.nama)}</option>
+            `).join('');
+            if (sortedCoa.some(c => c.kode === currentVal)) {
+                coaSelect.value = currentVal;
+            }
+        }
+
+        function handleAddCoa(e) {
+            e.preventDefault();
+            const kode = document.getElementById('newCoaKode').value.trim();
+            const nama = document.getElementById('newCoaNama').value.trim();
+            const tipe = document.getElementById('newCoaTipe').value;
+            if (!kode || !nama) return;
+            if (state.coa.some(c => String(c.kode) === kode)) {
+                showToast('Kode COA tersebut sudah ada!', true);
+                return;
+            }
+            state.coa.push({ kode, nama, jenis: tipe, tipe });
+            state.coa = getSortedCoaList();
+            document.getElementById('newCoaKode').value = '';
+            document.getElementById('newCoaNama').value = '';
+            saveState();
+            renderCoaTable();
+            populateTrxCoaDropdown();
+            renderLaporanKeuangan();
+            showToast('Akun COA berhasil ditambahkan & diurutkan!');
+        }
+
+        function deleteCoa(kode) {
+            state.coa = state.coa.filter(c => String(c.kode) !== String(kode));
+            saveState();
+            renderCoaTable();
+            populateTrxCoaDropdown();
+            renderLaporanKeuangan();
+            showToast('Akun COA dihapus.');
+        }
+
+        // ==========================================
+        // PENGATURAN, PASSWORD, BACKUP & AUTO CLOUD SYNC
+        // ==========================================
+        function populateSettingsForm() {
+            const s = state.settings;
+            document.getElementById('setAppName').value = s.appName;
+            document.getElementById('setAppSubtitle').value = s.appSubtitle;
+            document.getElementById('setSchoolName').value = s.schoolName;
+            document.getElementById('setSchoolAddress').value = s.schoolAddress;
+            document.getElementById('setMudirName').value = s.mudirName;
+            document.getElementById('setBendaharaName').value = s.bendaharaName;
+            document.getElementById('setPrintPlaceDate').value = s.printPlaceDate;
+            document.getElementById('setLogoUrl').value = s.logoUrl || '';
+            document.getElementById('setGasUrl').value = s.gasUrl || '';
+        }
+
+        function handleSaveSettings(e) {
+            e.preventDefault();
+            state.settings.appName = document.getElementById('setAppName').value.trim();
+            state.settings.appSubtitle = document.getElementById('setAppSubtitle').value.trim();
+            state.settings.schoolName = document.getElementById('setSchoolName').value.trim();
+            state.settings.schoolAddress = document.getElementById('setSchoolAddress').value.trim();
+            state.settings.mudirName = document.getElementById('setMudirName').value.trim();
+            state.settings.bendaharaName = document.getElementById('setBendaharaName').value.trim();
+            state.settings.printPlaceDate = document.getElementById('setPrintPlaceDate').value.trim();
+            state.settings.logoUrl = document.getElementById('setLogoUrl').value.trim();
+            saveState();
+            applyBranding();
+            renderLaporanKeuangan();
+            showToast('Identitas & pengaturan laporan disimpan!');
+        }
+
+        function saveGasUrl() {
+            let rawUrl = document.getElementById('setGasUrl').value.trim();
+            // Bersihkan segmen /u/0/ atau /u/1/ jika tersalin dari multi-login Google
+            rawUrl = rawUrl.replace(/\/macros\/u\/\d+\/s\//, '/macros/s/');
+            document.getElementById('setGasUrl').value = rawUrl;
+            state.settings.gasUrl = rawUrl;
+            saveState();
+            showToast('URL Server Google disimpan!');
+        }
+
+        async function pushToCloudSilent() {
+            let url = (state.settings.gasUrl || '').trim().replace(/\/macros\/u\/\d+\/s\//, '/macros/s/');
+            if (!url) return;
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ payload: state })
+                });
+            } catch (e) {
+                console.warn('Auto push cloud gagal:', e);
+            }
+        }
+
+        async function pushToCloudManual() {
+            if (!state.settings.gasUrl) {
+                showToast('Masukkan URL Web App Google (/exec) terlebih dahulu!', true);
+                return;
+            }
+            await pushToCloudSilent();
+            showToast('Data dikirim ke Server Google! Tunggu ±3 detik lalu coba Tarik.');
+        }
+
+        async function syncFromCloud(manual = false) {
+            let url = (state.settings.gasUrl || '').trim().replace(/\/macros\/u\/\d+\/s\//, '/macros/s/');
+            if (!url) {
+                if (manual) showToast('URL Server Google belum diatur di menu Pengaturan.', true);
+                return;
+            }
+            if (!url.endsWith('/exec')) {
+                if (manual) showToast('URL salah! Pastikan berakhiran /exec (bukan /dev atau link Google Drive).', true);
+                return;
+            }
+            try {
+                const cacheBusterUrl = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+                const res = await fetch(cacheBusterUrl, { method: 'GET', redirect: 'follow' });
+                const text = await res.text();
+                if (text.trim().startsWith('<')) {
+                    if (manual) showToast('Akses ditolak Google! Pastikan Deploy Apps Script disetel ke "Siapa saja (Anyone)".', true);
+                    return;
+                }
+                const data = JSON.parse(text);
+                if (data && data.status === 'error') {
+                    if (manual) showToast('Error Script Google: ' + (data.message || 'Gagal membaca data'), true);
+                    return;
+                }
+                if (data && data.settings && data.transaksi) {
+                    const keepUrl = (DEFAULT_CLOUD_SERVER_URL && DEFAULT_CLOUD_SERVER_URL.trim()) || url;
+                    const cloudUpdated = Number(data.settings.lastUpdated) || 0;
+                    const localUpdated = Number(state.settings.lastUpdated) || 0;
+                    if (!manual && cloudUpdated > 0 && cloudUpdated <= localUpdated) {
+                        return;
+                    }
+                    state = normalizeStateData(data);
+                    if (keepUrl) state.settings.gasUrl = keepUrl;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                    applyBranding();
+                    populateGlobalTahunSelect();
+                    refreshAllViews();
+                    if (manual) showToast('Sinkronisasi data dari Server Google berhasil!');
+                } else if (manual) {
+                    showToast('Database di Server Google masih kosong. Klik "Kirim ke Cloud" dulu dari perangkat utama.', true);
+                }
+            } catch (err) {
+                if (manual) showToast('Koneksi ke Google Apps Script terblokir (CORS). Cek Deployment "Who has access: Anyone".', true);
+            }
+        }
+
+        function downloadBackupJson() {
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `Backup_SIKAP_AlFurqon_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+        }
+
+        function restoreBackupJson(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    state = normalizeStateData(parsed);
+                    saveState();
+                    applyBranding();
+                    populateGlobalTahunSelect();
+                    refreshAllViews();
+                    showToast('Restore data backup berhasil!');
+                } catch (err) {
+                    showToast('Format file backup tidak valid!', true);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function openPasswordModal() {
+            document.getElementById('newPasswordInput').value = '';
+            document.getElementById('passwordModal').classList.remove('hidden');
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+        }
+
+        function handleChangePassword(e) {
+            e.preventDefault();
+            const newPass = document.getElementById('newPasswordInput').value.trim();
+            if (!currentUser || !newPass) return;
+            const u = state.users.find(item => item.username === currentUser.username);
+            if (u) u.password = newPass;
+            saveState();
+            closePasswordModal();
+            showToast('Kata sandi berhasil diperbarui!');
+        }
+
+        // ==========================================
+        // ASISTEN AI KEUANGAN PESANTREN
+        // ==========================================
+        function setAiQuickPrompt(text) {
+            document.getElementById('aiAssistantPrompt').value = text;
+        }
+
+        function askFinancialAiAssistant() {
+            const prompt = document.getElementById('aiAssistantPrompt').value.trim();
+            const out = document.getElementById('aiAssistantResponseBox');
+            if (!prompt) {
+                showToast('Tuliskan pertanyaan atau pilih topik analisis terlebih dahulu.', true);
+                return;
+            }
+            const ta = state.settings.tahunAktif;
+            const trxTa = state.transaksi.filter(t => t.tahunPelajaran === ta);
+            const masuk = trxTa.filter(t => t.jenis === 'MASUK').reduce((s, t) => s + Number(t.nominal || 0), 0);
+            const keluar = trxTa.filter(t => t.jenis === 'KELUAR').reduce((s, t) => s + Number(t.nominal || 0), 0);
+            const surplus = masuk - keluar;
+
+            out.classList.remove('hidden');
+            out.textContent =
+`RINGKASAN ANALISIS KEUANGAN (${state.settings.schoolName} — TA ${ta})
+Pertanyaan: "${prompt}"
+
+1. Posisi Aktivitas Keuangan Saat Ini:
+   • Total Penghasilan / Penerimaan: ${formatRupiah(masuk)}
+   • Total Beban / Pengeluaran: ${formatRupiah(keluar)}
+   • Kenaikan (Penurunan) Aset Neto: ${formatRupiah(surplus)}
+
+2. Catatan Akuntansi Pesantren (SAK EP 2024):
+   • Pencatatan transaksi telah diklasifikasikan berdasarkan kode akun COA terurut (4xxx untuk Penerimaan dan 5xxx untuk Beban) serta dipisahkan per dompet kas/bank dan pos alokasi dana.
+   • Pastikan setiap pengeluaran konsumtif maupun pembangunan telah dicatat sesuai pos alokasinya agar rasio likuiditas kas tetap terjaga.`;
+        }
+
+        // ==========================================
+        // INISIALISASI SAAT HALAMAN DIMUAT
+        // ==========================================
+        window.onload = function () {
+            applyBranding();
+            try {
+                const savedSession = localStorage.getItem(SESSION_KEY);
+                if (savedSession) {
+                    const parsedUser = JSON.parse(savedSession);
+                    const validUser = state.users.find(u => u.username === parsedUser.username);
+                    if (validUser) {
+                        currentUser = validUser;
+                        enterApp();
+                    }
+                }
+            } catch (e) {
+                localStorage.removeItem(SESSION_KEY);
+            }
+
+            // Sinkronisasi otomatis setiap 12 detik & saat tab kembali aktif
+            setInterval(() => {
+                if (currentUser && state.settings.gasUrl) {
+                    syncFromCloud(false);
+                }
+            }, 12000);
+
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden && currentUser && state.settings.gasUrl) {
+                    syncFromCloud(false);
+                }
+            });
+        };
+    </script>
+</body>
+</html>
