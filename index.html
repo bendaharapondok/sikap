@@ -2588,6 +2588,14 @@ async function enterApp() {
         // ==========================================
         // MASTER COA & PENGATURAN SISTEM (ADMIN)
         // ==========================================
+        let editingCoaKode = null; // Menyimpan status kode akun yang sedang diedit
+
+        function getSortedCoa() {
+            return [...(state.coa || [])].sort((a, b) => 
+                String(a.kode).localeCompare(String(b.kode), undefined, { numeric: true, sensitivity: 'base' })
+            );
+        }
+
         function renderCoaTable() {
             const alokasiSel = document.getElementById('coaAlokasiInput');
             if (alokasiSel) {
@@ -2596,20 +2604,85 @@ async function enterApp() {
             const tbody = document.getElementById('coaTableBody');
             if (!tbody) return;
 
-            // Urutkan data COA sebelum dirender ke tabel
             const sortedCoa = getSortedCoa();
 
             tbody.innerHTML = sortedCoa.map(c => `
-                <tr>
+                <tr class="${editingCoaKode === c.kode ? 'bg-amber-50' : ''}">
                     <td class="py-2 px-3 font-extrabold">${c.kode}</td>
                     <td class="py-2 px-3 font-semibold">${c.nama}<span class="block text-[10px] text-slate-400">${c.pembatasan}</span></td>
                     <td class="py-2 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${c.jenis === 'MASUK' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${c.jenis}</span></td>
                     <td class="py-2 px-3 text-amber-800 font-semibold">${c.alokasi}</td>
-                    <td class="py-2 px-3 text-center">
-                        <button type="button" onclick="deleteCoaItem('${c.kode}')" class="px-2 py-1 rounded bg-rose-50 text-rose-700 font-bold text-[11px]">Hapus</button>
+                    <td class="py-2 px-3 text-center whitespace-nowrap">
+                        <button type="button" onclick="editCoaItem('${c.kode}')" class="px-2 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 font-bold text-[11px] mr-1">Edit</button>
+                        <button type="button" onclick="deleteCoaItem('${c.kode}')" class="px-2 py-1 rounded bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-[11px]">Hapus</button>
                     </td>
                 </tr>
             `).join('');
+        }
+
+        function editCoaItem(kode) {
+            const item = (state.coa || []).find(c => c.kode === kode);
+            if (!item) return;
+
+            editingCoaKode = kode;
+
+            const kodeInput = document.getElementById('coaKodeInput');
+            kodeInput.value = item.kode;
+            kodeInput.readOnly = true; // Kunci kode akun saat edit agar referensi transaksi lama tetap aman
+            kodeInput.classList.add('bg-slate-100', 'text-slate-500', 'cursor-not-allowed');
+
+            document.getElementById('coaNamaInput').value = item.nama;
+            document.getElementById('coaJenisInput').value = item.jenis;
+            document.getElementById('coaPembatasanInput').value = item.pembatasan;
+            document.getElementById('coaAlokasiInput').value = item.alokasi;
+
+            // Ubah tampilan tombol submit & tampilkan tombol batal jika ada
+            const submitBtn = document.getElementById('coaSubmitBtn') || kodeInput.closest('form')?.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.textContent = 'Update COA';
+                submitBtn.classList.remove('bg-emerald-600', 'bg-teal-600');
+                submitBtn.classList.add('bg-amber-600');
+            }
+
+            let cancelBtn = document.getElementById('coaCancelEditBtn');
+            if (!cancelBtn && submitBtn) {
+                cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.id = 'coaCancelEditBtn';
+                cancelBtn.textContent = 'Batal';
+                cancelBtn.className = 'px-3 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-xs ml-2';
+                cancelBtn.onclick = cancelEditCoa;
+                submitBtn.parentNode.insertBefore(cancelBtn, submitBtn.nextSibling);
+            }
+            if (cancelBtn) cancelBtn.classList.remove('hidden');
+
+            renderCoaTable();
+            document.getElementById('coaNamaInput').focus();
+        }
+
+        function cancelEditCoa() {
+            editingCoaKode = null;
+
+            const kodeInput = document.getElementById('coaKodeInput');
+            if (kodeInput) {
+                kodeInput.value = '';
+                kodeInput.readOnly = false;
+                kodeInput.classList.remove('bg-slate-100', 'text-slate-500', 'cursor-not-allowed');
+            }
+            const namaInput = document.getElementById('coaNamaInput');
+            if (namaInput) namaInput.value = '';
+
+            const submitBtn = document.getElementById('coaSubmitBtn') || kodeInput?.closest('form')?.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.textContent = 'Simpan COA';
+                submitBtn.classList.remove('bg-amber-600');
+                submitBtn.classList.add('bg-emerald-600');
+            }
+
+            const cancelBtn = document.getElementById('coaCancelEditBtn');
+            if (cancelBtn) cancelBtn.classList.add('hidden');
+
+            renderCoaTable();
         }
 
         function handleSaveCoa(e) {
@@ -2620,27 +2693,29 @@ async function enterApp() {
             const pembatasan = document.getElementById('coaPembatasanInput').value;
             const alokasi = document.getElementById('coaAlokasiInput').value;
 
-            const existingIdx = state.coa.findIndex(c => c.kode === kode);
+            if (!kode || !nama) return;
+
+            const existingIdx = state.coa.findIndex(c => c.kode === (editingCoaKode || kode));
             if (existingIdx !== -1) {
                 state.coa[existingIdx] = { kode, nama, jenis, pembatasan, alokasi };
             } else {
                 state.coa.push({ kode, nama, jenis, pembatasan, alokasi });
             }
 
-            // Urutkan langsung di state.coa agar dropdown COA di form transaksi ikut terurut
             state.coa.sort((a, b) => 
                 String(a.kode).localeCompare(String(b.kode), undefined, { numeric: true, sensitivity: 'base' })
             );
 
-            document.getElementById('coaKodeInput').value = '';
-            document.getElementById('coaNamaInput').value = '';
+            const isUpdate = Boolean(editingCoaKode);
+            cancelEditCoa(); // Reset form dan status edit
+
             saveState();
             refreshAllViews();
-            showToast('Pos COA berhasil disimpan!');
+            showToast(isUpdate ? 'Pos COA berhasil diperbarui!' : 'Pos COA berhasil disimpan!');
         }
 
-        // Hapus berdasarkan 'kode' akun agar akurat meskipun urutan array berubah
         function deleteCoaItem(kode) {
+            if (editingCoaKode === kode) cancelEditCoa();
             const idx = state.coa.findIndex(c => c.kode === kode);
             if (idx !== -1) {
                 state.coa.splice(idx, 1);
@@ -2651,6 +2726,7 @@ async function enterApp() {
         }
 
         function resetDefaultCoa() {
+            cancelEditCoa();
             state.coa = JSON.parse(JSON.stringify(DEFAULT_COA)).sort((a, b) => 
                 String(a.kode).localeCompare(String(b.kode), undefined, { numeric: true, sensitivity: 'base' })
             );
